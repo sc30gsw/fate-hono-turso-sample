@@ -3,14 +3,15 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/index.ts",
+    ".": "./src/db.ts",
     "./schema": "./src/schema.ts",
+    "./auth-schema": "./src/auth-schema.ts",
     "./client": "./src/client.ts"
   },
   "scripts": {
     "check": "vp check",
     "db:generate": "dotenvx run -f ../../.env -- drizzle-kit generate",
-    "db:push": "dotenvx run -f ../../.env -- drizzle-kit push",
+    "db:push": "dotenvx run -f ../../.env -- drizzle-kit push --force",
     "db:studio": "dotenvx run -f ../../.env -- drizzle-kit studio",
     "fix": "vp check --fix",
     "fmt": "vp fmt",

@@ -58,7 +58,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "#!/bin/bash\n# export default check — forbidden outside src/routes/, *.config.ts, and Bun server entry files\ninput=$(cat)\nfile_path=$(echo \"$input\" | jq -r '.tool_input.file_path // \"\"')\nif [ -n \"$file_path\" ] && [ -f \"$file_path\" ]; then\n  if [[ ! \"$file_path\" =~ /routes/ ]] && [[ ! \"$file_path\" =~ \\.config\\.ts$ ]] && [[ ! \"$file_path\" =~ /packages/api/src/index\\.ts$ ]] && [[ ! \"$file_path\" =~ /packages/client/server/index\\.ts$ ]]; then\n    defaults=$(grep -n \"export default\" \"$file_path\" 2>/dev/null || true)\n    if [ -n \"$defaults\" ]; then\n      echo \"[Hook] WARNING: 'export default' found in $file_path\" >&2\n      echo \"$defaults\" | head -5 >&2\n      echo \"[Hook] Use named exports. Default exports are only allowed in src/routes/, *.config.ts, and Bun server entry files (packages/api/src/index.ts, packages/client/server/index.ts).\" >&2\n    fi\n  fi\nfi"
+            "command": "#!/bin/bash\n# export default check — forbidden outside src/routes/, *.config.ts, Bun server entries, and Hono module entries\ninput=$(cat)\nfile_path=$(echo \"$input\" | jq -r '.tool_input.file_path // \"\"')\nif [ -n \"$file_path\" ] && [ -f \"$file_path\" ]; then\n  if [[ ! \"$file_path\" =~ /routes/ ]] && [[ ! \"$file_path\" =~ \\.config\\.ts$ ]] && [[ ! \"$file_path\" =~ /packages/api/src/api\\.ts$ ]] && [[ ! \"$file_path\" =~ /packages/client/server/server\\.ts$ ]] && [[ ! \"$file_path\" =~ /packages/api/src/modules/[^/]+/[^/]+\\.ts$ ]]; then\n    defaults=$(grep -n \"export default\" \"$file_path\" 2>/dev/null || true)\n    if [ -n \"$defaults\" ]; then\n      echo \"[Hook] WARNING: 'export default' found in $file_path\" >&2\n      echo \"$defaults\" | head -5 >&2\n      echo \"[Hook] Use named exports. Default exports are only allowed in src/routes/, *.config.ts, Bun server entries (packages/api/src/api.ts, packages/client/server/server.ts), and Hono module entries (packages/api/src/modules/<feature>/<feature>.ts).\" >&2\n    fi\n  fi\nfi"
           }
         ]
       },
@@ -67,7 +67,16 @@
         "hooks": [
           {
             "type": "command",
-            "command": "#!/bin/bash\n# try-catch check — use better-result pattern in @app/client (not @app/api per Elysia convention)\ninput=$(cat)\nfile_path=$(echo \"$input\" | jq -r '.tool_input.file_path // \"\"')\nif [ -n \"$file_path\" ] && [ -f \"$file_path\" ]; then\n  # Apply only to @app/client; @app/api uses Elysia's throw status() convention\n  if [[ \"$file_path\" =~ /packages/client/ ]] && [[ ! \"$file_path\" =~ \\.(test|spec)\\.(ts|tsx)$ ]]; then\n    trycatch=$(grep -nE \"(\\} catch|try \\{)\" \"$file_path\" 2>/dev/null || true)\n    if [ -n \"$trycatch\" ]; then\n      echo \"[Hook] WARNING: try-catch found in $file_path\" >&2\n      echo \"$trycatch\" | head -5 >&2\n      echo \"[Hook] Use better-result pattern (Result.tryPromise / result.match) in client code\" >&2\n    fi\n  fi\nfi"
+            "command": "#!/bin/bash\n# try-catch check — client code avoids try-catch; fate returns { error, result } and unexpected errors hit the error boundary\ninput=$(cat)\nfile_path=$(echo \"$input\" | jq -r '.tool_input.file_path // \"\"')\nif [ -n \"$file_path\" ] && [ -f \"$file_path\" ]; then\n  if [[ \"$file_path\" =~ /packages/client/ ]] && [[ ! \"$file_path\" =~ \\.(test|spec)\\.(ts|tsx)$ ]]; then\n    trycatch=$(grep -nE \"(\\} catch|try \\{)\" \"$file_path\" 2>/dev/null || true)\n    if [ -n \"$trycatch\" ]; then\n      echo \"[Hook] WARNING: try-catch found in $file_path\" >&2\n      echo \"$trycatch\" | head -5 >&2\n      echo \"[Hook] Prefer fate's { error, result } pattern and let unexpected errors hit the error boundary.\" >&2\n    fi\n  fi\nfi"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "#!/bin/bash\n# no-index-files — block `index.ts` / `index.tsx` creation in source dirs (per .claude/rules/typescript/no-index-files.md)\ninput=$(cat)\nfile_path=$(echo \"$input\" | jq -r '.tool_input.file_path // \"\"')\nif [[ \"$file_path\" =~ /(packages|scripts)/.+/(src|server)/.*/index\\.(ts|tsx)$ ]] || [[ \"$file_path\" =~ /(packages|scripts)/.+/(src|server)/index\\.(ts|tsx)$ ]]; then\n  echo \"[Hook] WARNING: index file at $file_path\" >&2\n  echo \"[Hook] Use a named file instead — e.g. modules/auth/auth.ts, server/server.ts, lib/db.ts.\" >&2\n  echo \"[Hook] See .claude/rules/typescript/no-index-files.md.\" >&2\nfi"
           }
         ]
       }

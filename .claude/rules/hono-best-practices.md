@@ -5,7 +5,7 @@ Authoritative source:
 - [hono.dev — RPC](https://hono.dev/docs/guides/rpc)
 - [hono.dev — Bun setup](https://hono.dev/docs/getting-started/bun)
 
-This file applies inside `packages/api/` and `packages/client/server/` (the fate HTTP transport). Hono is intentionally flexible; we adopt the official guidance and add a few project-specific rules.
+This file applies inside `packages/api/`. Hono is the HTTP framework that hosts Better Auth's wildcard + fate's transport handler. We adopt official guidance and add a few project-specific rules.
 
 ## Running on Bun: default-export `{ fetch, port }`
 
@@ -16,8 +16,6 @@ Bun auto-serves any module that `default export`s an object with a `fetch` handl
 import { Hono } from "hono";
 
 const app = new Hono().get("/", (c) => c.text("Hello Bun!"));
-
-export type AppType = typeof app;
 
 export default {
   fetch: app.fetch,
@@ -30,7 +28,7 @@ export default {
 Bun.serve({ fetch: app.fetch, port: 3000 });
 ```
 
-This is the only place in the project where `export default` is allowed outside `src/routes/*` and `*.config.ts`. The lint override + PostToolUse hook are already configured for `packages/api/src/index.ts` and `packages/client/server/index.ts`.
+This is the only place in the project where `export default` is allowed outside `src/routes/*` and `*.config.ts`.
 
 Static assets, when needed, come from `hono/bun`'s `serveStatic` — not by `Bun.serve`'s static option.
 
@@ -75,70 +73,46 @@ Don't grow `index.ts`. Split features into route files and mount with `app.route
 
 ```
 packages/api/src/
-├── index.ts                    # composes feature routes
+├── api.ts                      # entry — composes feature routes
 └── modules/
-    ├── auth.ts                 # exports a chained Hono instance
-    └── health.ts
+    └── auth/auth.ts            # exports a chained Hono instance
 ```
 
 ```ts
-// modules/health.ts
+// modules/auth/auth.ts
+import { auth } from "@app/auth";
 import { Hono } from "hono";
 
-const app = new Hono()
-  .get("/", (c) => c.json({ ok: true, uptime: process.uptime() }));
-
-export default app;
-export type HealthApp = typeof app;       // exported for RPC client typing
+export const authRoutes = new Hono().on(["GET", "POST"], "/*", (c) =>
+  auth.handler(c.req.raw),
+);
 ```
 
 ```ts
-// index.ts
+// api.ts
 import { Hono } from "hono";
-import auth from "~/modules/auth";
-import health from "~/modules/health";
+import { authRoutes } from "~/modules/auth/auth";
+import { fate } from "~/modules/fate/fate";
+
+const fateHandler = createHonoFateHandler(fate);
 
 const app = new Hono()
-  .basePath("/api")
-  .route("/health", health)
-  .route("/auth", auth);
+  .use("*", cors({ credentials: true, origin: allowedOrigins }))
+  .route("/api/auth", authRoutes)
+  .all("/fate/*", (c) => fateHandler(c));
 
-export type AppType = typeof app;          // single export for `hc<AppType>()`
+export default { fetch: app.fetch, port: 3002 };
 ```
 
-## Use RPC by chaining
+## Hono RPC (`hc<AppType>`) — not used in this project
 
-For `hc<AppType>()` client typing to work, **chain every route on `new Hono()`** rather than calling `.get()` separately on a saved reference. Hono's type returned from each chained call accumulates the route shape; breaking the chain drops type info.
+Hono's typed RPC client requires an explicit chained route shape on `new Hono()` and exports `AppType = typeof app`. **This project doesn't ship a Hono RPC client.** The reasons:
 
-```ts
-// ✅ RPC-friendly
-const app = new Hono()
-  .get("/", (c) => c.json("list authors"))
-  .post("/", (c) => c.json("create an author", 201))
-  .get("/:id", (c) => c.json(`get ${c.req.param("id")}`));
+- fate owns the data layer end-to-end (`/fate/*`) — its own type-safe client (`.fate/client.generated.ts`) is the typed contract.
+- Better Auth's `/api/auth/*` is a wildcard (`.on(["GET","POST"], "/*", auth.handler)`) — opaque to RPC anyway.
+- No other `/api/*` routes exist.
 
-// ❌ Type info lost — hc<AppType> won't see post / get('/:id')
-const app = new Hono();
-app.get("/", (c) => c.json("list authors"));
-app.post("/", (c) => c.json("create an author", 201));
-app.get("/:id", (c) => c.json(`get ${c.req.param("id")}`));
-```
-
-Export both the runtime app and its type:
-
-```ts
-export default app;
-export type AppType = typeof app;
-```
-
-Client side:
-
-```ts
-import { hc } from "hono/client";
-import type { AppType } from "@app/api";  // or relative path
-
-const client = hc<AppType>("/api");
-```
+If you add a typed `/api/*` route later, then re-introduce `AppType` and `hc<AppType>` on the client. Until then, the simple `new Hono().use(...).route(...).all("/fate/*", ...)` shape in `packages/api/src/api.ts` is sufficient.
 
 ## HEAD requests
 
@@ -158,30 +132,11 @@ app.head("/api/users", (c) => c.text("ignored"));
 
 If HEAD needs different behavior, branch inside middleware on `c.req.method === "HEAD"`. To skip expensive body work for HEAD, set `c.res = new Response(null, c.res)` in middleware after `next()`.
 
-## Validation via `@hono/valibot-validator`
+## Server-side validation
 
-The client already uses `valibot` for forms (see `typescript/valibot-validation.md`). Reuse the schema language on the server:
+This project doesn't currently expose typed JSON endpoints (only Better Auth's wildcard + fate's transport), so no Hono-level validator is installed. If you add a typed `/api/*` route later, install a Hono validator that consumes valibot (Standard Schema) and wire it into the new route.
 
-```ts
-import { vValidator } from "@hono/valibot-validator";
-import * as v from "valibot";
-
-const SignInBody = v.object({
-  password: v.pipe(v.string(), v.minLength(8)),
-  username: v.pipe(v.string(), v.minLength(1)),
-});
-
-const app = new Hono().post(
-  "/sign-in",
-  vValidator("json", SignInBody),
-  async (c) => {
-    const body = c.req.valid("json");    // typed as InferOutput<typeof SignInBody>
-    return c.json(await Auth.signIn(body));
-  },
-);
-```
-
-`v.InferOutput<typeof SignInBody>` gives the runtime-aligned type; do not declare a parallel `type` or `interface`.
+fate validates mutation inputs via the `input?: SchemaLike` field on each `MutationDefinition`, fed by `@app/shared/post-schemas`. valibot 1.x is Standard Schema compatible, so the same schemas work on both ends without an adapter.
 
 ## Error handling
 
@@ -195,7 +150,7 @@ import { HTTPException } from "hono/http-exception";
 if (!user) throw new HTTPException(404, { message: "User not found" });
 ```
 
-In the client (`@app/client`), wrap misina calls in `better-result` patterns at the I/O boundary — see `typescript/better-result.md`. The server's job is to return clean HTTP semantics; the client decides how to map those to Result variants.
+The server's job is to return clean HTTP semantics. The client (`@app/client`) doesn't call this Hono surface directly except via Better Auth's own client (handles its own error envelopes) and fate's transport (which returns `{ error, result }` for mutations).
 
 ## Testing
 
@@ -212,22 +167,21 @@ describe("health", () => {
 });
 ```
 
-`app.request()` runs the full Hono lifecycle in-process — no HTTP server needed. Equivalent to Elysia's `app.handle(new Request(...))` if you've worked with that.
+`app.request()` runs the full Hono lifecycle in-process — no HTTP server needed. Equivalent to Hono's `app.handle(new Request(...))` if you've worked with that.
 
 ## Project Boundaries
 
 | Concern | Use | Don't use |
 |---|---|---|
-| Server-side request/response validation | `@hono/valibot-validator` + `valibot` | zod, manual checks |
-| Client-side form validation | `valibot` (shares schemas where possible) | server-side schemas leak to client |
-| Server-side error handling | `throw new HTTPException(code, opts)` + `app.onError` | `better-result` |
-| Client-side I/O error handling | `better-result` | `throw` |
+| Form / mutation input validation | `valibot` (shared via `@app/shared/post-schemas`) | zod, manual checks |
+| Server-side error handling | `throw new HTTPException(code, opts)` from `hono/http-exception` + `app.onError` | ad-hoc envelopes |
+| Client-side error handling | fate's `{ error, result }`; let unhandled errors hit the error boundary | wrappers we don't have installed |
 | DB access from `@app/api` | `@app/db` (Drizzle) | raw SQL strings, ad-hoc clients |
-| fate routes (`/fate`, `/fate/live`) | `@app/client/server/` (Hono + `createHonoFateHandler`) | `@app/api` |
+| fate routes (`/fate/*`) | `packages/api/src/modules/fate/` mounted via `app.all("/fate/*", createHonoFateHandler(fate))` in `api.ts` | a second Hono process |
 
 ## Project-Specific Pitfalls
 
-- **Two Hono apps in this monorepo.** `@app/api` exposes `/api/*` on `:3002`. `@app/client/server` exposes `/fate` and `/fate/live` on `:3001` and is dedicated to fate's transport. Don't mix routes across them.
-- **`createHonoFateHandler` lives in `@app/client/server` only.** It is the official fate adapter and the *only* reason the fate server uses Hono. Treat it as the integration boundary.
-- **No controllers, even in `modules/`.** A module's `index.ts` (or single-file `<feature>.ts`) is just a chained `new Hono()` instance. Resist the urge to extract a `Controller` class — it kills RPC inference.
-- **One `AppType` export per Hono app.** `@app/api/src/index.ts` exports `AppType`. If we add an RPC client in `@app/client`, it imports that type and runs `hc<AppType>("/api")`. Don't break the chain or types fall apart silently.
+- **One Hono app for the whole backend.** `packages/api/src/api.ts` mounts auth and fate. Adding a new feature = a new `modules/<feature>/` folder + `.route("/api/<feature>", feature)` line. No second process, no separate port.
+- **`createHonoFateHandler` is composed with `.all("/fate/*", ...)`** per the official example (`nkzw-tech/fate`, `example/server-drizzle/src/index.tsx`). The wildcard catches both `POST /fate` and `POST /fate/live` — the handler dispatches internally by request body.
+- **No controllers, even in `modules/`.** A module's single-file `<feature>.ts` is just a chained `new Hono()` instance — preserves type inference if you ever want to expose typed RPC later.
+- **`@app/db`'s barrel uses relative `./` imports, not `~/`.** Cross-workspace loading via the fate Vite plugin SSR runner can't read nested tsconfig paths. The `~/*` alias is intentionally absent from `packages/db/tsconfig.json`.

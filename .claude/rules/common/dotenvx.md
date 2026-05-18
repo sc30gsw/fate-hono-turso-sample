@@ -49,10 +49,29 @@ In CI/prod, expose the matching `DOTENV_PRIVATE_KEY_PRODUCTION` env var so doten
 
 | Prefix | Where it lives | Consumer |
 |---|---|---|
-| `VITE_*` | `.env` (root) | Inlined into the browser bundle by Vite. **Anyone can read these in DevTools.** Never put secrets here. |
-| (no prefix) | `.env` (root) | Server-side only — `@app/api`, `@app/client/server`, `@app/db`. Access via `process.env.NAME`. Safe to hold secrets. |
+| `VITE_*` | `.env` (root) | Inlined into the browser bundle by Vite. Access via `import.meta.env.VITE_NAME`. **Anyone can read these in DevTools.** Never put secrets here. |
+| (no prefix) | `.env` (root) | Server-side only — `@app/api`, `@app/client/server`, `@app/db`, `@app/auth`. Access via `process.env.NAME`. Safe to hold secrets. |
 
-A `TURSO_AUTH_TOKEN` is server-only — never expose it via `VITE_*`.
+A `TURSO_AUTH_TOKEN` or `BETTER_AUTH_SECRET` is server-only — never expose them via `VITE_*`. A `VITE_APP_BASE_URL` is a public origin — fine to ship in the browser bundle.
+
+### Typing `VITE_*` env vars
+
+Augment `ImportMetaEnv` so every `import.meta.env.VITE_NAME` reference is typed (not `string | boolean | undefined`):
+
+```ts
+// packages/client/src/vite-env.d.ts
+/// <reference types="vite/client" />
+
+interface ImportMetaEnv {
+  readonly VITE_APP_BASE_URL: string;
+}
+
+interface ImportMeta {
+  readonly env: ImportMetaEnv;
+}
+```
+
+Every new `VITE_*` variable should be added here when it's introduced.
 
 ## Fail fast on missing required vars
 

@@ -2,20 +2,30 @@
   "name": "@app/api",
   "private": true,
   "type": "module",
+  "exports": {
+    "./features/auth/views": "./src/features/auth/views.ts",
+    "./features/comments/schemas": "./src/features/comments/schemas/comments-schema.ts",
+    "./features/comments/views": "./src/features/comments/views.ts",
+    "./features/likes/schemas": "./src/features/likes/schemas/likes-schema.ts",
+    "./features/posts/schemas": "./src/features/posts/schemas/posts-schema.ts",
+    "./features/posts/views": "./src/features/posts/views.ts"
+  },
   "scripts": {
-    "build": "dotenvx run -f ../../.env -- bun build src/index.ts --target bun --outdir dist",
+    "build": "dotenvx run -f ../../.env -- bun build src/api.ts --target bun --outdir dist",
     "check": "vp check",
-    "dev": "dotenvx run -f ../../.env -- bun --watch src/index.ts",
+    "dev": "dotenvx run -f ../../.env -- bun --watch src/api.ts",
     "fix": "vp check --fix",
     "fmt": "vp fmt",
     "lint": "vp lint",
-    "start": "dotenvx run -f ../../.env -- bun src/index.ts",
+    "start": "dotenvx run -f ../../.env -- bun src/api.ts",
     "test": "vp test"
   },
   "dependencies": {
+    "@app/auth": "workspace:*",
     "@app/db": "workspace:*",
     "@app/shared": "workspace:*",
-    "@hono/valibot-validator": "^0.6.1",
+    "@nkzw/fate": "^1.0.0",
+    "drizzle-orm": "^0.45.2",
     "hono": "^4.7.0",
     "valibot": "^1.3.1"
   },

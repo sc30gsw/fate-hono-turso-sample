@@ -1,0 +1,25 @@
+{
+  "name": "@app/auth",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/auth.ts"
+  },
+  "scripts": {
+    "check": "vp check",
+    "fix": "vp check --fix",
+    "fmt": "vp fmt",
+    "lint": "vp lint",
+    "test": "vp test"
+  },
+  "dependencies": {
+    "@app/db": "workspace:*",
+    "@app/shared": "workspace:*",
+    "better-auth": "^1.6.11"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "vite": "npm:@voidzero-dev/vite-plus-core@^0.1.18",
+    "vite-plus": "latest"
+  }
+}

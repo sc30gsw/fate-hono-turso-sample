@@ -414,29 +414,6 @@ function ProductsPage() {
 
 ## 追加推奨事項
 
-### エラーハンドリング（better-result）
-
-このプロジェクトでは [better-result](https://github.com/dmmulroy/better-result) ライブラリを使用した型安全なエラーハンドリングを採用しています。
-
-#### API層
-
-`src/lib/api/generated/sdk.gen.ts` の生成関数をラップします。
-
-```typescript
-import { Result } from "better-result";
-import { createProduct } from "~/lib/api/generated/sdk.gen";
-
-export function createProductSafe(params: CreateProductData["body"]) {
-  return Result.tryPromise({
-    catch: (e) => e as Error,
-    try: async () => {
-      const { data } = await createProduct({ body: params });
-      return data;
-    },
-  });
-}
-```
-
 #### フック層（use-\*.ts）
 
 ```typescript
@@ -584,8 +561,6 @@ vp test    # Vitest
 - [Hono](https://hono.dev/)
 - [Turso](https://docs.turso.tech/introduction)
 - [Drizzle](https://orm.drizzle.team/)
-- [misina](https://github.com/productdevbook/misina)
-- [better-result](https://github.com/dmmulroy/better-result)
 - [Valibot](https://valibot.dev/)
 - [oxlint](https://oxc.rs/docs/guide/usage/linter.html)
 - [AHA Programming](https://kentcdodds.com/blog/aha-programming)

@@ -1,11 +1,13 @@
 import babel from "@rolldown/plugin-babel";
 import tailwindcss from "@tailwindcss/vite";
 import react, { reactCompilerPreset } from "@vitejs/plugin-react";
+import { fate } from "react-fate/vite";
 import { defineConfig } from "vite-plus";
+import tsconfigPaths from "vite-tsconfig-paths";
 
 export default defineConfig({
   fmt: {
-    ignorePatterns: ["dist/**", "**/dist/**"],
+    ignorePatterns: ["dist/**", "**/dist/**", ".fate/**"],
     sortImports: { partitionByComment: true },
     sortPackageJson: { sortScripts: true },
     sortTailwindcss: { functions: ["cn"] },
@@ -13,7 +15,7 @@ export default defineConfig({
   lint: {
     categories: { correctness: "error" },
     env: { browser: true, node: true },
-    ignorePatterns: ["dist/**", "**/dist/**"],
+    ignorePatterns: ["dist/**", "**/dist/**", ".fate/**"],
     options: {
       denyWarnings: true,
       typeAware: true,
@@ -21,9 +23,7 @@ export default defineConfig({
     },
     overrides: [
       {
-        //? Bun's auto-server requires `export default { fetch, port }`,
-        //? and `src/routes/*` plus *.config.ts are conventional default-export sites.
-        files: ["src/routes/**/*.tsx", "server/index.ts", "*.config.ts"],
+        files: ["src/routes/**/*.tsx", "*.config.ts"],
         rules: { "no-default-export": "off" },
       },
     ],
@@ -33,13 +33,27 @@ export default defineConfig({
   staged: {
     "*.{js,jsx,ts,tsx,json,css}": "vp check --fix",
   },
-  plugins: [tailwindcss(), react(), babel({ presets: [reactCompilerPreset()] })],
+  plugins: [
+    tsconfigPaths({
+      projects: [
+        "./tsconfig.json",
+        "../api/tsconfig.json",
+        "../auth/tsconfig.json",
+        "../db/tsconfig.json",
+        "../shared/tsconfig.json",
+      ],
+    }),
+    fate({ module: "../api/src/fate.ts", transport: "native" }),
+    tailwindcss(),
+    react(),
+    babel({ presets: [reactCompilerPreset()] }),
+  ],
   resolve: { tsconfigPaths: true },
   server: {
     port: 5173,
     proxy: {
-      "/fate": "http://localhost:3001",
       "/api": "http://localhost:3002",
+      "/fate": "http://localhost:3002",
     },
   },
 });
