@@ -3,13 +3,13 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "dotenvx run -f ../../.env -- bun build src/index.ts --target bun --outdir dist",
+    "build": "dotenvx run -f ../../.env -- bun build src/api.ts --target bun --outdir dist",
     "check": "vp check",
-    "dev": "dotenvx run -f ../../.env -- bun --watch src/index.ts",
+    "dev": "dotenvx run -f ../../.env -- bun --watch src/api.ts",
     "fix": "vp check --fix",
     "fmt": "vp fmt",
     "lint": "vp lint",
-    "start": "dotenvx run -f ../../.env -- bun src/index.ts",
+    "start": "dotenvx run -f ../../.env -- bun src/api.ts",
     "test": "vp test"
   },
   "dependencies": {

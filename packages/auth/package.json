@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/auth.ts"
   },
   "scripts": {
     "check": "vp check",

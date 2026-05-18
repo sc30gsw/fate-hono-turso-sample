@@ -79,7 +79,8 @@ Bun workspaces monorepo with three packages — see `README.md` for the table an
 
 All conventions live in `.claude/rules/`. Phase 1 highlights Claude should not violate:
 
-- File naming: kebab-case (`user-card.tsx`)
+- File naming: kebab-case (`user-card.tsx`). **No `index.ts` / `index.tsx`** in source dirs — use named files (`auth.ts`, `db.ts`, `home.tsx`). See `.claude/rules/typescript/no-index-files.md`. Hook-enforced.
+- Forms: TanStack Form + valibot (no adapter). `form.state.isSubmitting` for pending state, `formApi.setErrorMap({ onSubmit: { form, fields } })` for server errors — no `useState`/`useTransition`/`useMutation`. See `.claude/rules/typescript/form-pattern.md`.
 - Imports: `~/` alias inside `packages/client/src/` (configured in `tsconfig.base.json`); no relative paths
 - Types: `type` only — `interface` is banned (hook-enforced)
 - Exports: named only; `export default` allowed only in `src/routes/*` and `*.config.ts` (hook-enforced)

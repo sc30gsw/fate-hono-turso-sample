@@ -21,9 +21,11 @@ export default defineConfig({
     },
     overrides: [
       {
-        //? Bun's auto-server requires `export default { fetch, port }`,
-        //? and `src/routes/*` plus *.config.ts are conventional default-export sites.
-        files: ["src/routes/**/*.tsx", "server/index.ts", "*.config.ts"],
+        //? Bun's auto-server requires `export default { fetch, port }` (server/server.ts).
+        //? `src/routes/*` is allowed because some users may want default-exported route
+        //? components, although we now use named `Route` exports. `*.config.ts` is the
+        //? conventional default-export site.
+        files: ["src/routes/**/*.tsx", "server/server.ts", "*.config.ts"],
         rules: { "no-default-export": "off" },
       },
     ],
