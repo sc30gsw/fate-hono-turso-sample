@@ -1,9 +1,9 @@
 import { db, post } from "@app/db";
 
-import type { FateContext } from "~/fate";
-import { requireUserId } from "~/features/auth/utils/require-user-id";
-import { type CreatePostInput, createPostInput } from "~/features/posts/schemas/posts-schema";
-import { liveEventBus } from "~/live";
+import type { FateContext } from "../../fate";
+import { liveEventBus } from "../../live";
+import { requireUserId } from "../auth/utils/require-user-id";
+import { type CreatePostInput, createPostInput } from "./schemas/posts-schema";
 
 export const createPost = {
   input: createPostInput,

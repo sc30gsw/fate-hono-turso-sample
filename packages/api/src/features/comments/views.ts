@@ -1,7 +1,7 @@
 import type { CommentRow } from "@app/db";
 import { dataView, type Entity } from "@nkzw/fate/server";
 
-import { type User, userDataView } from "~/features/auth/views";
+import { type User, userDataView } from "../auth/views";
 
 export const commentDataView = dataView<CommentRow>("Comment")({
   id: true,

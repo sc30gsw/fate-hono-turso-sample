@@ -1,9 +1,9 @@
 import { comment, db } from "@app/db";
 
-import type { FateContext } from "~/fate";
-import { requireUserId } from "~/features/auth/utils/require-user-id";
-import { type AddCommentInput, addCommentInput } from "~/features/comments/schemas/comments-schema";
-import { liveEventBus } from "~/live";
+import type { FateContext } from "../../fate";
+import { liveEventBus } from "../../live";
+import { requireUserId } from "../auth/utils/require-user-id";
+import { type AddCommentInput, addCommentInput } from "./schemas/comments-schema";
 
 export const addComment = {
   input: addCommentInput,

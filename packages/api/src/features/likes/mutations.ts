@@ -1,10 +1,10 @@
 import { db, like } from "@app/db";
 import { and, eq } from "drizzle-orm";
 
-import type { FateContext } from "~/fate";
-import { requireUserId } from "~/features/auth/utils/require-user-id";
-import { type LikePostInput, likePostInput } from "~/features/likes/schemas/likes-schema";
-import { liveEventBus } from "~/live";
+import type { FateContext } from "../../fate";
+import { liveEventBus } from "../../live";
+import { requireUserId } from "../auth/utils/require-user-id";
+import { type LikePostInput, likePostInput } from "./schemas/likes-schema";
 
 export const likePost = {
   type: "Post",

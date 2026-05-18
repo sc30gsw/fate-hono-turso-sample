@@ -1,8 +1,8 @@
 import type { PostRow } from "@app/db";
 import { dataView, type Entity, list } from "@nkzw/fate/server";
 
-import { type User, userDataView } from "~/features/auth/views";
-import { commentDataView, type Comment } from "~/features/comments/views";
+import { type User, userDataView } from "../auth/views";
+import { commentDataView, type Comment } from "../comments/views";
 
 const basePost = {
   id: true,

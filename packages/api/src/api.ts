@@ -3,8 +3,8 @@ import { createHonoFateHandler } from "@nkzw/fate/server";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 
-import { fate } from "~/fate";
-import { authRoutes } from "~/features/auth/routes";
+import { fate } from "./fate";
+import { authRoutes } from "./features/auth/routes";
 
 const allowedOrigins = (process.env.CLIENT_ORIGIN ?? "http://localhost:5173").split(",");
 

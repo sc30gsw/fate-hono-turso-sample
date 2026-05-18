@@ -1,4 +1,4 @@
-import type { FateContext } from "~/fate";
+import type { FateContext } from "../../../fate";
 
 export function requireUserId(ctx: FateContext) {
   if (!ctx.sessionUser) {
