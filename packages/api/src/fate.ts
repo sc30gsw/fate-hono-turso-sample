@@ -1,3 +1,4 @@
+// ? これを元に client.generated.ts を生成する
 import { auth } from "@app/auth";
 import { authSchema, db, schema as domainSchema } from "@app/db";
 import type { UserRow } from "@app/db/auth-schema";
@@ -7,6 +8,11 @@ import { createDrizzleSourceAdapter } from "@nkzw/fate/server/drizzle";
 import { Root } from "./features/posts/roots";
 import { liveEventBus } from "./live";
 import { mutations } from "./mutations";
+
+export { Root };
+export type { User } from "./features/auth/views";
+export type { Comment } from "./features/comments/views";
+export type { Post } from "./features/posts/views";
 
 export type FateContext = { sessionUser: Pick<UserRow, "id"> | undefined };
 

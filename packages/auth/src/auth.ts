@@ -18,6 +18,7 @@ if (trustedOrigins.length === 0) {
 
 export const auth = betterAuth({
   secret,
+  baseURL: process.env.BETTER_AUTH_URL ?? process.env.VITE_APP_BASE_URL,
   database: drizzleAdapter(db, {
     provider: "sqlite",
     schema: {

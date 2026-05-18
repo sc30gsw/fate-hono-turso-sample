@@ -8,7 +8,6 @@ dist
 bun.lock
 .turbo
 .cache
-.fate
 .idea
 .vscode/*
 !.vscode/extensions.json
