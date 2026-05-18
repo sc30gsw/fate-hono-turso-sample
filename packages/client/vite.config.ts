@@ -34,11 +34,6 @@ export default defineConfig({
     "*.{js,jsx,ts,tsx,json,css}": "vp check --fix",
   },
   plugins: [
-    //? Explicit list of workspace tsconfigs so `~/*` resolves correctly inside
-    //? cross-workspace imports (e.g. @app/db's `db.ts` loaded from @app/client via
-    //? the fate Vite plugin's SSR runner). vite-plus's built-in
-    //? `resolve.tsconfigPaths` only sees the consumer's tsconfig — we need to
-    //? enumerate the consumed packages too.
     tsconfigPaths({
       projects: [
         "./tsconfig.json",
@@ -48,11 +43,7 @@ export default defineConfig({
         "../shared/tsconfig.json",
       ],
     }),
-    //? Reads the fate server module (now colocated with the API in @app/api) to
-    //? generate typed client roots/mutations. Native transport hits /fate via the
-    //? Vite proxy → :3002 (the single Hono process hosts auth, health, and fate).
-    //? See .claude/rules/fate-best-practices.md (HTTP Transport).
-    fate({ module: "../api/src/modules/fate/fate.ts", transport: "native" }),
+    fate({ module: "../api/src/fate.ts", transport: "native" }),
     tailwindcss(),
     react(),
     babel({ presets: [reactCompilerPreset()] }),
@@ -60,7 +51,6 @@ export default defineConfig({
   resolve: { tsconfigPaths: true },
   server: {
     port: 5173,
-    //? Single Hono backend on :3002 hosts /api/* and /fate/* — proxy both there.
     proxy: {
       "/api": "http://localhost:3002",
       "/fate": "http://localhost:3002",

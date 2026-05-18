@@ -1,5 +1,10 @@
+import { RouterProvider } from "@tanstack/react-router";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
+import { FateClient } from "react-fate";
+
+import { fateClient } from "~/lib/fate-client";
+import { router } from "~/router";
 
 import "~/styles.css";
 
@@ -10,9 +15,8 @@ if (!root) {
 
 createRoot(root).render(
   <StrictMode>
-    <main className="p-6 font-sans">
-      <h1 className="text-2xl font-bold text-red-500">Hello fate</h1>
-      <p>Phase 1 smoke test. Phase 2 will replace this with the real app.</p>
-    </main>
+    <FateClient client={fateClient}>
+      <RouterProvider router={router} />
+    </FateClient>
   </StrictMode>,
 );

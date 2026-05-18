@@ -1,10 +1,7 @@
+import { requireEnv } from "@app/shared/env";
 import { createAuthClient } from "better-auth/react";
 
-const appBaseUrl = import.meta.env.VITE_APP_BASE_URL;
-
-if (!appBaseUrl) {
-  throw new Error("VITE_APP_BASE_URL is required");
-}
+const appBaseUrl = requireEnv("VITE_APP_BASE_URL", import.meta.env.VITE_APP_BASE_URL);
 
 export const authClient = createAuthClient({ baseURL: `${appBaseUrl}/api/auth` });
 
