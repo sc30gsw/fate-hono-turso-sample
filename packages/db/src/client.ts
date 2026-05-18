@@ -3,8 +3,8 @@ import { resolve } from "node:path";
 import { createClient } from "@libsql/client";
 import { drizzle } from "drizzle-orm/libsql";
 
-import * as authSchema from "./auth-schema";
-import * as domainSchema from "./schema";
+import * as authSchema from "~/auth-schema";
+import * as domainSchema from "~/schema";
 
 const monorepoRoot = resolve(import.meta.dirname, "../../..");
 

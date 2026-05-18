@@ -11,7 +11,7 @@
   "scripts": {
     "check": "vp check",
     "db:generate": "dotenvx run -f ../../.env -- drizzle-kit generate",
-    "db:push": "dotenvx run -f ../../.env -- drizzle-kit push",
+    "db:push": "dotenvx run -f ../../.env -- drizzle-kit push --force",
     "db:studio": "dotenvx run -f ../../.env -- drizzle-kit studio",
     "fix": "vp check --fix",
     "fmt": "vp fmt",

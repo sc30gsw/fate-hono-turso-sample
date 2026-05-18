@@ -1,9 +1,9 @@
 import { relations, sql } from "drizzle-orm";
 import { integer, primaryKey, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
-import { user } from "./auth-schema";
+import { user } from "~/auth-schema";
 
-export const posts = sqliteTable("posts", {
+export const post = sqliteTable("post", {
   id: text("id").primaryKey(),
   authorId: text("author_id")
     .notNull()
@@ -15,11 +15,11 @@ export const posts = sqliteTable("posts", {
     .default(sql`(unixepoch())`),
 });
 
-export const comments = sqliteTable("comments", {
+export const comment = sqliteTable("comment", {
   id: text("id").primaryKey(),
   postId: text("post_id")
     .notNull()
-    .references(() => posts.id, { onDelete: "cascade" }),
+    .references(() => post.id, { onDelete: "cascade" }),
   authorId: text("author_id")
     .notNull()
     .references(() => user.id, { onDelete: "cascade" }),
@@ -29,12 +29,12 @@ export const comments = sqliteTable("comments", {
     .default(sql`(unixepoch())`),
 });
 
-export const likes = sqliteTable(
-  "likes",
+export const like = sqliteTable(
+  "like",
   {
     postId: text("post_id")
       .notNull()
-      .references(() => posts.id, { onDelete: "cascade" }),
+      .references(() => post.id, { onDelete: "cascade" }),
     userId: text("user_id")
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
@@ -45,25 +45,24 @@ export const likes = sqliteTable(
   (t) => [primaryKey({ columns: [t.postId, t.userId] })],
 );
 
-//? Relations enable fate's createDrizzleFate to traverse FK joins for views.
-export const postsRelations = relations(posts, ({ many, one }) => ({
-  author: one(user, { fields: [posts.authorId], references: [user.id] }),
-  comments: many(comments),
-  likes: many(likes),
+export const postRelations = relations(post, ({ many, one }) => ({
+  author: one(user, { fields: [post.authorId], references: [user.id] }),
+  comments: many(comment),
+  likes: many(like),
 }));
 
-export const commentsRelations = relations(comments, ({ one }) => ({
-  post: one(posts, { fields: [comments.postId], references: [posts.id] }),
-  author: one(user, { fields: [comments.authorId], references: [user.id] }),
+export const commentRelations = relations(comment, ({ one }) => ({
+  post: one(post, { fields: [comment.postId], references: [post.id] }),
+  author: one(user, { fields: [comment.authorId], references: [user.id] }),
 }));
 
-export const likesRelations = relations(likes, ({ one }) => ({
-  post: one(posts, { fields: [likes.postId], references: [posts.id] }),
-  user: one(user, { fields: [likes.userId], references: [user.id] }),
+export const likeRelations = relations(like, ({ one }) => ({
+  post: one(post, { fields: [like.postId], references: [post.id] }),
+  user: one(user, { fields: [like.userId], references: [user.id] }),
 }));
 
-export type Post = typeof posts.$inferSelect;
-export type NewPost = typeof posts.$inferInsert;
-export type Comment = typeof comments.$inferSelect;
-export type NewComment = typeof comments.$inferInsert;
-export type Like = typeof likes.$inferSelect;
+export type Post = typeof post.$inferSelect;
+export type NewPost = typeof post.$inferInsert;
+export type Comment = typeof comment.$inferSelect;
+export type NewComment = typeof comment.$inferInsert;
+export type Like = typeof like.$inferSelect;
