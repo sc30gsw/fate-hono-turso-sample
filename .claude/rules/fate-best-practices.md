@@ -141,7 +141,7 @@ export function LikeButton({ post }: { post: { id: string; likes: number } }) {
 
 **DO** pass `optimistic` for instant feedback. fate replaces with server truth on success and rolls back on failure — **don't** revert manually.
 
-**DON'T** wrap mutation results in `better-result`. fate's action result carries its own `{ error, data }` shape; let the error boundary handle thrown errors and check `result?.error` for handled failures.
+**DON'T** wrap mutation results in extra Result types — fate's action result already carries `{ error, data }`. Let the error boundary handle thrown errors and check `result?.error` for handled failures.
 
 ## Drizzle Integration
 
@@ -194,8 +194,8 @@ The default is fine for libSQL on Turso edge. If you see thundering-herd queries
 ## HTTP Transport (Project-Specific)
 
 The only first-party HTTP adapter shipped today is `createHonoFateHandler`. We
-mount it on the **same Hono app** that serves `/api/auth/*` and `/api/health`
-(see `packages/api/src/api.ts`) using `app.all("/fate/*", ...)` per the official
+mount it on the **same Hono app** that serves `/api/auth/*` (see
+`packages/api/src/api.ts`) using `app.all("/fate/*", ...)` per the official
 example:
 
 ```ts
@@ -207,7 +207,6 @@ const fateHandler = createHonoFateHandler(fate);
 const app = new Hono()
   .use("*", cors({ credentials: true, origin: allowedOrigins }))
   .route("/api/auth", authRoutes)
-  .route("/api/health", health)
   .all("/fate/*", (c) => fateHandler(c));
 ```
 
@@ -240,16 +239,14 @@ uses same-origin URLs and Better Auth cookies flow through naturally.
 |---|---|---|
 | Field selection | fate views | valibot schemas |
 | Form input validation | valibot | fate views |
-| Client error handling at I/O boundaries | `better-result` | fate's action result |
-| fate action error | `result?.error` + error boundary | `better-result` wrappers |
+| fate action error | `result?.error` + error boundary | extra Result-type wrappers |
 | Authorization at the data layer | view membership | runtime filters in components |
 
 ## When fate Is The Wrong Tool
 
 fate excels at normalized entity graphs (posts, users, comments) where many components need overlapping slices. It's a poor fit for:
 
-- One-off REST endpoints that don't fit the entity model (health checks, file uploads, OAuth callbacks) — use `@app/api` (Hono) instead and call from the client via `misina`
+- One-off REST endpoints that don't fit the entity model (file uploads, OAuth callbacks, webhooks) — add a plain `.get/.post` route under `packages/api/src/modules/`
 - Streaming binary data
-- Webhooks (no UI — write a plain Hono route)
 
 When you reach for fate for one of these, you're doing it wrong. Reach for `@app/api` instead.

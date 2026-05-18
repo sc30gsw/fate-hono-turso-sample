@@ -19,7 +19,6 @@
     "@app/auth": "workspace:*",
     "@app/db": "workspace:*",
     "@app/shared": "workspace:*",
-    "@hono/valibot-validator": "^0.6.1",
     "@nkzw/fate": "^1.0.0",
     "drizzle-orm": "^0.45.2",
     "hono": "^4.7.0",

@@ -67,7 +67,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "#!/bin/bash\n# try-catch check — use better-result pattern in @app/client; @app/api uses Hono's throw HTTPException\ninput=$(cat)\nfile_path=$(echo \"$input\" | jq -r '.tool_input.file_path // \"\"')\nif [ -n \"$file_path\" ] && [ -f \"$file_path\" ]; then\n  if [[ \"$file_path\" =~ /packages/client/ ]] && [[ ! \"$file_path\" =~ \\.(test|spec)\\.(ts|tsx)$ ]]; then\n    trycatch=$(grep -nE \"(\\} catch|try \\{)\" \"$file_path\" 2>/dev/null || true)\n    if [ -n \"$trycatch\" ]; then\n      echo \"[Hook] WARNING: try-catch found in $file_path\" >&2\n      echo \"$trycatch\" | head -5 >&2\n      echo \"[Hook] Use better-result pattern (Result.tryPromise / result.match) in client code\" >&2\n    fi\n  fi\nfi"
+            "command": "#!/bin/bash\n# try-catch check — client code avoids try-catch; fate returns { error, result } and unexpected errors hit the error boundary\ninput=$(cat)\nfile_path=$(echo \"$input\" | jq -r '.tool_input.file_path // \"\"')\nif [ -n \"$file_path\" ] && [ -f \"$file_path\" ]; then\n  if [[ \"$file_path\" =~ /packages/client/ ]] && [[ ! \"$file_path\" =~ \\.(test|spec)\\.(ts|tsx)$ ]]; then\n    trycatch=$(grep -nE \"(\\} catch|try \\{)\" \"$file_path\" 2>/dev/null || true)\n    if [ -n \"$trycatch\" ]; then\n      echo \"[Hook] WARNING: try-catch found in $file_path\" >&2\n      echo \"$trycatch\" | head -5 >&2\n      echo \"[Hook] Prefer fate's { error, result } pattern and let unexpected errors hit the error boundary.\" >&2\n    fi\n  fi\nfi"
           }
         ]
       },

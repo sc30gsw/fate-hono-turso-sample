@@ -73,12 +73,11 @@ Bun workspaces monorepo. See `README.md` for the table.
 
 **One Hono process serves the entire backend.** `@app/api` (`:3002`) mounts:
 - `/api/auth/*` — Better Auth handler
-- `/api/health`  — uptime probe
 - `/fate/*`     — fate native HTTP transport (queries + mutations + live SSE), via `createHonoFateHandler(fate)` with `app.all("/fate/*", ...)` per the [official fate example](https://github.com/nkzw-tech/fate/blob/main/example/server-drizzle/src/index.tsx).
 
-The Vite dev server (`@app/client`, `:5173`) proxies both `/api/*` and `/fate/*` to `:3002`, so the browser sees same-origin cookies for Better Auth. There is no separate "fate server" process.
+The Vite dev server (`@app/client`, `:5173`) proxies both `/api/*` and `/fate/*` to `:3002`, so the browser sees same-origin cookies for Better Auth.
 
-**Stack:** Bun 1.3.9 · React 19.2 (Compiler enabled via `babel-plugin-react-compiler` in `packages/client/vite.config.ts`) · Vite (+ `vite-tsconfig-paths` for cross-workspace `~/*` resolution) · TanStack Router · TanStack Form · fate (`@nkzw/fate` + `react-fate`) · Hono · Drizzle (libSQL/Turso) · Better Auth · valibot (client forms + `@hono/valibot-validator` server-side) · `better-result` (client I/O boundary) · misina · vite-plus / fallow / react-doctor.
+**Stack:** Bun 1.3.9 · React 19.2 (Compiler enabled via `babel-plugin-react-compiler` in `packages/client/vite.config.ts`) · Vite (+ `vite-tsconfig-paths` for cross-workspace `~/*` resolution) · TanStack Router · TanStack Form · fate (`@nkzw/fate` + `react-fate`) · Hono (HTTP framework hosting fate + Better Auth) · Drizzle (libSQL/Turso) · Better Auth · valibot · vite-plus / fallow / react-doctor.
 
 ## Conventions
 
@@ -89,8 +88,8 @@ All conventions live in `.claude/rules/`. Phase 1 highlights Claude should not v
 - Imports: `~/` alias inside `packages/client/src/` (configured in `tsconfig.base.json`); no relative paths
 - Types: `type` only — `interface` is banned (hook-enforced)
 - Exports: named only; `export default` allowed only in `src/routes/*` and `*.config.ts` (hook-enforced)
-- Errors (client): `better-result`; no `try-catch` in `packages/client/` (hook-enforced)
-- Errors (server): `throw new HTTPException(code, { message })` from `hono/http-exception` + `app.onError`; no `better-result` inside `@app/api`
+- Errors (client): no `try-catch` in `packages/client/` (hook-enforced). fate mutations return `{ error, result }` — check `result.error`. Throw for unexpected bugs (error boundary catches).
+- Errors (server): `throw new HTTPException(code, { message })` from `hono/http-exception` + `app.onError`
 - React: function declarations for components/hooks; no manual `useMemo`/`useCallback` (Compiler handles it)
 - Comments: explain *why*, never *what*
 
