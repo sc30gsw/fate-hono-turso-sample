@@ -14,6 +14,8 @@ const postSummarySelection = {
   title: true,
   createdAt: true,
   author: UserView,
+  commentCount: true,
+  likeCount: true,
 } as const;
 
 export const PostListItemView = view<Post>()(postSummarySelection);
@@ -28,6 +30,7 @@ export const CommentView = view<Comment>()({
 export const postCommentsConnection = {
   args: { first: 10 },
   items: { node: CommentView },
+  live: { append: "visible" },
 } as const;
 
 export const PostDetailView = view<Post>()({

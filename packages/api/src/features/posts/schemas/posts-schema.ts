@@ -12,6 +12,12 @@ export const createPostInput = v.object({
 
 export type CreatePostInput = v.InferOutput<typeof createPostInput>;
 
+export const deletePostInput = v.object({
+  id: v.pipe(v.string(), v.minLength(1)),
+});
+
+export type DeletePostInput = v.InferOutput<typeof deletePostInput>;
+
 export const defaultCreatePostValues: CreatePostInput = {
   title: "",
   content: "",

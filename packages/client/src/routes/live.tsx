@@ -1,7 +1,7 @@
 import { createRoute, Link } from "@tanstack/react-router";
 import { useRequest } from "react-fate";
 
-import { PostCard } from "~/features/posts/components/post-card";
+import { LivePostCard } from "~/features/posts/components/post-card";
 import { PostListItemView } from "~/features/posts/views/post-views";
 import { Route as AuthenticatedRoute } from "~/routes/authenticated";
 
@@ -17,7 +17,7 @@ function PostList() {
     <ul className="space-y-3">
       {posts.map((post) => (
         <li key={post.id}>
-          <PostCard post={post} />
+          <LivePostCard post={post} />
         </li>
       ))}
     </ul>

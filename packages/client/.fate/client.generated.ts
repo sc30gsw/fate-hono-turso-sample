@@ -16,6 +16,16 @@ const mutations = {
     FateAPI['mutations']['createPost']['input'],
     FateAPI['mutations']['createPost']['output']
   >('Post'),
+  'deleteComment': mutation<
+    Comment,
+    FateAPI['mutations']['deleteComment']['input'],
+    FateAPI['mutations']['deleteComment']['output']
+  >('Comment'),
+  'deletePost': mutation<
+    Post,
+    FateAPI['mutations']['deletePost']['input'],
+    FateAPI['mutations']['deletePost']['output']
+  >('Post'),
   'likePost': mutation<
     Post,
     FateAPI['mutations']['likePost']['input'],

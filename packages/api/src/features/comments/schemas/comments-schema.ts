@@ -7,6 +7,12 @@ export const addCommentInput = v.object({
 
 export type AddCommentInput = v.InferOutput<typeof addCommentInput>;
 
+export const deleteCommentInput = v.object({
+  id: v.pipe(v.string(), v.minLength(1)),
+});
+
+export type DeleteCommentInput = v.InferOutput<typeof deleteCommentInput>;
+
 export const commentBodyInput = v.pick(addCommentInput, ["content"]);
 
 export const defaultCommentBodyValues: v.InferOutput<typeof commentBodyInput> = {

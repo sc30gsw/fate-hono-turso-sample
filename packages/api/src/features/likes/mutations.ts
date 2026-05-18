@@ -1,5 +1,5 @@
 import { db, like } from "@app/db";
-import { and, eq } from "drizzle-orm";
+import { and, count, eq } from "drizzle-orm";
 
 import type { FateContext } from "../../fate";
 import { liveEventBus } from "../../live";
@@ -22,7 +22,12 @@ export const likePost = {
       await db.delete(like).where(and(eq(like.postId, input.postId), eq(like.userId, userId)));
     }
 
-    liveEventBus.update("Post", input.postId);
-    return { id: input.postId };
+    const [likeCountRow] = await db
+      .select({ likeCount: count() })
+      .from(like)
+      .where(eq(like.postId, input.postId));
+
+    liveEventBus.update("Post", input.postId, { changed: ["likeCount"] });
+    return { id: input.postId, likeCount: likeCountRow?.likeCount ?? 0 };
   },
 } as const;

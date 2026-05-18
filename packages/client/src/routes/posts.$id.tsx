@@ -5,6 +5,7 @@ import { CommentCard } from "~/features/comments/components/comment-card";
 import { CommentForm } from "~/features/comments/components/comment-form";
 import { LikeButton } from "~/features/likes/components/like-button";
 import { AuthorBadge } from "~/features/posts/components/author-badge";
+import { DeletePostButton } from "~/features/posts/components/delete-post-button";
 import { PostDetailView, postCommentsConnection } from "~/features/posts/views/post-views";
 import { Route as AuthenticatedRoute } from "~/routes/authenticated";
 
@@ -34,8 +35,8 @@ function PostDetailPage() {
           })}
         </p>
         <div className="flex items-center gap-3">
-          <LikeButton likeCount={0} postId={String(post.id)} />
-          <span className="text-sm text-neutral-500">💬 {commentItems.length}</span>
+          <LikeButton likeCount={post.likeCount} postId={String(post.id)} />
+          <span className="text-sm text-neutral-500">💬 {post.commentCount}</span>
           <Link
             className="ml-auto text-sm text-blue-700 underline"
             params={{ id: String(post.id) }}
@@ -43,6 +44,7 @@ function PostDetailPage() {
           >
             View live →
           </Link>
+          <DeletePostButton postId={String(post.id)} />
         </div>
       </header>
 

@@ -1,5 +1,5 @@
 import type { PostRow } from "@app/db";
-import { dataView, type Entity, list } from "@nkzw/fate/server";
+import { computed, count, dataView, type Entity, list } from "@nkzw/fate/server";
 
 import { type User, userDataView } from "../auth/views";
 import { commentDataView, type Comment } from "../comments/views";
@@ -10,6 +10,14 @@ const basePost = {
   content: true,
   createdAt: true,
   author: userDataView,
+  commentCount: computed<PostRow, number>({
+    select: { count: count("comments") },
+    resolve: (_item, deps) => (deps.count as number | undefined) ?? 0,
+  }),
+  likeCount: computed<PostRow, number>({
+    select: { count: count("likes") },
+    resolve: (_item, deps) => (deps.count as number | undefined) ?? 0,
+  }),
 } as const satisfies Parameters<ReturnType<typeof dataView<PostRow>>>[0];
 
 export const postSummaryDataView = dataView<PostRow>("Post")(basePost);
