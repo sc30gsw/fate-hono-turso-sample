@@ -2,10 +2,7 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "types": ["bun"],
-    "rootDir": "./src",
-    "paths": {
-      "~/*": ["./src/*"]
-    }
+    "rootDir": "./src"
   },
   "include": ["src/**/*", "drizzle.config.ts", "vite.config.ts"]
 }
