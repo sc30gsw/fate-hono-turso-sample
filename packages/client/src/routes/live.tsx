@@ -5,12 +5,26 @@ import { PostCard } from "~/features/posts/components/post-card";
 import { PostListItemView } from "~/features/posts/views/post-views";
 import { Route as AuthenticatedRoute } from "~/routes/authenticated";
 
-function LiveHomePage() {
+function PostList() {
   const { posts } = useRequest(
     { posts: { list: PostListItemView } },
     { mode: "stale-while-revalidate" },
   );
 
+  return posts.length === 0 ? (
+    <p className="text-neutral-500">No posts yet.</p>
+  ) : (
+    <ul className="space-y-3">
+      {posts.map((post) => (
+        <li key={post.id}>
+          <PostCard post={post} />
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function LiveHomePage() {
   return (
     <section className="space-y-3">
       <header className="flex items-center justify-between">
@@ -19,17 +33,7 @@ function LiveHomePage() {
           New post
         </Link>
       </header>
-      {posts.length === 0 ? (
-        <p className="text-neutral-500">No posts yet.</p>
-      ) : (
-        <ul className="space-y-3">
-          {posts.map((post) => (
-            <li key={post.id}>
-              <PostCard post={post} />
-            </li>
-          ))}
-        </ul>
-      )}
+      <PostList />
     </section>
   );
 }
