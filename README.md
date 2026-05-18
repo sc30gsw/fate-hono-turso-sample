@@ -29,7 +29,7 @@ bun install
 cp .env.example .env
 ```
 
-For local development, the default `TURSO_DATABASE_URL=file:./dev.db` works without Turso credentials.
+Set `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN` in `.env` to point Drizzle and the app at your Turso database. The project intentionally has no local `dev.db` fallback, so missing Turso credentials fail fast instead of pushing schema changes to a local SQLite file.
 
 ## Scripts
 
@@ -42,4 +42,3 @@ bun run doctor       # react-doctor on @app/client
 bun run fallow       # dead-code analysis on @app/client
 bun run db:push      # drizzle-kit push (Phase 2)
 ```
-
