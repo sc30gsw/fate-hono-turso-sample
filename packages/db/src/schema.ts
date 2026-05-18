@@ -62,7 +62,4 @@ export const likeRelations = relations(like, ({ one }) => ({
 }));
 
 export type PostRow = typeof post.$inferSelect;
-export type NewPostRow = typeof post.$inferInsert;
 export type CommentRow = typeof comment.$inferSelect;
-export type NewCommentRow = typeof comment.$inferInsert;
-export type LikeRow = typeof like.$inferSelect;

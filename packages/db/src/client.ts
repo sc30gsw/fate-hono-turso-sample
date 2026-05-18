@@ -11,6 +11,7 @@ function resolveDbUrl(raw: string | undefined, monorepoRoot: string, fallback?: 
     if (fallback) {
       return fallback;
     }
+
     throw new Error("TURSO_DATABASE_URL is required");
   }
 
@@ -32,4 +33,3 @@ const client = createClient({
 });
 
 export const db = drizzle(client, { schema });
-export type DB = typeof db;

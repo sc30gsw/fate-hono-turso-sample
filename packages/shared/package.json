@@ -3,6 +3,7 @@
   "private": true,
   "type": "module",
   "exports": {
+    "./env": "./src/env.ts",
     "./parse": "./src/parse.ts",
     "./post-schemas": "./src/post-schemas.ts"
   },

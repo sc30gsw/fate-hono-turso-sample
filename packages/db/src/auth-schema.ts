@@ -58,4 +58,3 @@ export const verification = sqliteTable("verification", {
 });
 
 export type UserRow = typeof user.$inferSelect;
-export type SessionRow = typeof session.$inferSelect;
