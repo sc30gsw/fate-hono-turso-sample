@@ -1,6 +1,6 @@
 import { createFateServer, list } from "@nkzw/fate/server";
 
-import { postSummaryDataView } from "./views";
+import { postSummaryDataView } from "~/features/posts/views";
 
 type Roots = NonNullable<Parameters<typeof createFateServer>[0]>["roots"];
 

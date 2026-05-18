@@ -4,9 +4,9 @@ import type { UserRow } from "@app/db/auth-schema";
 import { createFateServer } from "@nkzw/fate/server";
 import { createDrizzleSourceAdapter } from "@nkzw/fate/server/drizzle";
 
+import { Root } from "./features/posts/roots";
 import { liveEventBus } from "./live";
-import { mutations } from "./mutations";
-import { Root } from "./roots";
+import { mutations } from "./modules/fate/mutations";
 
 export type FateContext = { sessionUser: Pick<UserRow, "id"> | undefined };
 
