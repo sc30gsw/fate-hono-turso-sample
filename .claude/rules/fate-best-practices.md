@@ -145,24 +145,29 @@ export function LikeButton({ post }: { post: { id: string; likes: number } }) {
 
 ## Drizzle Integration
 
-```ts
-// @app/client/server/fate.ts (referenced by the Vite plugin)
-import { createFateServer } from '@nkzw/fate/server';
-import { createDrizzleFate } from '@nkzw/fate/server/drizzle';
-import { db, schema } from '@app/db';
-import { Root } from './roots';
+We use the **native** transport (not tRPC), so wire `createDrizzleSourceAdapter`
+(NOT `createDrizzleFate` — that one is for the tRPC procedure-based variant)
+and pass it as `sources` to `createFateServer`:
 
-const { procedure, sources, live } = createDrizzleFate({
+```ts
+// packages/api/src/modules/fate/fate.ts (referenced by the Vite plugin)
+import { createFateServer } from "@nkzw/fate/server";
+import { createDrizzleSourceAdapter } from "@nkzw/fate/server/drizzle";
+import { authSchema, db, schema as domainSchema } from "@app/db";
+import { liveEventBus } from "./live";
+import { Root } from "./roots";
+
+const sources = createDrizzleSourceAdapter<FateContext>({
   db,
-  schema,
+  schema: { ...authSchema, ...domainSchema },
   views: Root,
 });
 
-export const fate = createFateServer({
+export const fate = createFateServer<FateContext>({
+  context: async ({ adapterContext }) => {/* read Better Auth session */},
+  live: liveEventBus,
   roots: Root,
   sources,
-  procedure,
-  live,
 });
 ```
 
@@ -176,7 +181,7 @@ export const fate = createFateServer({
 ### Tune `nestedPaginationConcurrency` deliberately
 
 ```ts
-createDrizzleFate({
+createDrizzleSourceAdapter({
   db,
   schema,
   views: Root,
@@ -188,41 +193,46 @@ The default is fine for libSQL on Turso edge. If you see thundering-herd queries
 
 ## HTTP Transport (Project-Specific)
 
-The only first-party HTTP adapter shipped today is `createHonoFateHandler`. In this repo we host it on `Bun.serve`:
+The only first-party HTTP adapter shipped today is `createHonoFateHandler`. We
+mount it on the **same Hono app** that serves `/api/auth/*` and `/api/health`
+(see `packages/api/src/api.ts`) using `app.all("/fate/*", ...)` per the official
+example:
 
 ```ts
-// @app/client/server/index.ts
-import { Hono } from 'hono';
-import { createHonoFateHandler } from '@nkzw/fate/server';
-import { fate } from './fate';
+// packages/api/src/api.ts
+import { createHonoFateHandler } from "@nkzw/fate/server";
+import { fate } from "~/modules/fate/fate";
 
-const app = new Hono();
-const handler = createHonoFateHandler(fate);
-app.post('/fate', handler);
-app.post('/fate/live', handler);   // SSE
-
-Bun.serve({ port: 3001, fetch: app.fetch });
+const fateHandler = createHonoFateHandler(fate);
+const app = new Hono()
+  .use("*", cors({ credentials: true, origin: allowedOrigins }))
+  .route("/api/auth", authRoutes)
+  .route("/api/health", health)
+  .all("/fate/*", (c) => fateHandler(c));
 ```
 
-The Vite plugin handles client-side wiring:
+The wildcard `"/fate/*"` catches both `POST /fate` (queries/mutations) and
+`POST /fate/live` (SSE) — the handler dispatches internally by request body.
+
+The Vite plugin handles client-side wiring and points at the fate module
+inside `@app/api`:
 
 ```ts
-// @app/client/vite.config.ts
-import { fate } from 'react-fate/vite';
+// packages/client/vite.config.ts
+import { fate } from "react-fate/vite";
 
 export default defineConfig({
   plugins: [
     fate({
-      module: './server/fate.ts',
-      transport: 'native',
+      module: "../api/src/modules/fate/fate.ts",
+      transport: "native",
     }),
   ],
 });
 ```
 
-The Vite dev server proxies `/fate` and `/fate/live` to `:3001`, so the browser uses same-origin URLs.
-
-**DON'T** mount fate routes inside `@app/api` (Hono). The two stacks stay independent. If you need an admin endpoint that triggers a fate mutation server-side, call the action directly via the fate server export — don't HTTP-hop.
+The Vite dev server proxies both `/api` and `/fate` to `:3002`, so the browser
+uses same-origin URLs and Better Auth cookies flow through naturally.
 
 ## Project Boundaries
 

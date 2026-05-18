@@ -5,7 +5,7 @@
   "packageManager": "bun@1.3.9",
   "workspaces": ["packages/*"],
   "scripts": {
-    "dev": "concurrently -k -n fate,api,vite -c yellow,cyan,green 'bun --filter @app/client dev:server' 'bun --filter @app/api dev' 'bun --filter @app/client dev:client'",
+    "dev": "concurrently -k -n api,vite -c cyan,green 'bun --filter @app/api dev' 'bun --filter @app/client dev'",
     "build": "bun --filter '@app/*' build",
     "check": "bun --filter '@app/*' check",
     "fix": "bun --filter '@app/*' fix",

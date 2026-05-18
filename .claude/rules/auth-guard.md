@@ -193,9 +193,9 @@ The Vite proxy (see `packages/client/vite.config.ts`) maps `/api/*` → `:3002`,
 - **Don't pass a relative URL to `createAuthClient`.** It throws at module load. Use the env var (`import.meta.env.VITE_APP_BASE_URL`), not `window.location.origin` — relying on origin sniffing means dev and prod silently agree to whatever browser the test runs in.
 - **Don't navigate manually inside `beforeLoad`** (e.g. via `useNavigate` — which you can't anyway). Always `throw redirect(...)`.
 
-## Future: server-side session in fate's `context`
+## Server-side session in fate's `context`
 
-When the fate server (`@app/client/server/fate.ts`) is implemented, the same Better Auth instance from `@app/auth` reads the cookie:
+The fate server (`packages/api/src/modules/fate/fate.ts`) reuses the same Better Auth instance from `@app/auth` to read the session cookie:
 
 ```ts
 import { auth } from "@app/auth";
@@ -209,7 +209,7 @@ createFateServer({
 });
 ```
 
-Cookies set at sign-in flow through to `/fate` because the Vite proxy keeps everything same-origin. fate views then filter rows by `ctx.sessionUser.id` (see `fate-best-practices.md`).
+Cookies set at sign-in flow through to `/fate` because the Vite proxy keeps everything same-origin and the fate handler is mounted in the same Hono process. fate views then filter rows by `ctx.sessionUser.id` (see `fate-best-practices.md`).
 
 ## Related rules
 

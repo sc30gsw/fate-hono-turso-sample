@@ -5,8 +5,7 @@
   "scripts": {
     "build": "dotenvx run -f ../../.env -- vp build",
     "check": "vp check",
-    "dev:client": "dotenvx run -f ../../.env -- vp dev",
-    "dev:server": "dotenvx run -f ../../.env -- bun --watch server/server.ts",
+    "dev": "dotenvx run -f ../../.env -- vp dev",
     "doctor": "react-doctor . --verbose --yes --no-lint",
     "fallow": "fallow",
     "fallow:audit": "fallow audit",
@@ -16,6 +15,7 @@
     "preview": "vp preview"
   },
   "dependencies": {
+    "@app/api": "workspace:*",
     "@app/db": "workspace:*",
     "@app/shared": "workspace:*",
     "@nkzw/fate": "^1.0.0",
@@ -48,6 +48,7 @@
     "react-grab": "^0.1.32",
     "tailwindcss": "^4.2.2",
     "vite": "npm:@voidzero-dev/vite-plus-core@^0.1.18",
-    "vite-plus": "latest"
+    "vite-plus": "latest",
+    "vite-tsconfig-paths": "^5.1.4"
   }
 }

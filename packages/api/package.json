@@ -2,6 +2,9 @@
   "name": "@app/api",
   "private": true,
   "type": "module",
+  "exports": {
+    "./fate/views": "./src/modules/fate/views.ts"
+  },
   "scripts": {
     "build": "dotenvx run -f ../../.env -- bun build src/api.ts --target bun --outdir dist",
     "check": "vp check",
@@ -17,6 +20,8 @@
     "@app/db": "workspace:*",
     "@app/shared": "workspace:*",
     "@hono/valibot-validator": "^0.6.1",
+    "@nkzw/fate": "^1.0.0",
+    "drizzle-orm": "^0.45.2",
     "hono": "^4.7.0",
     "valibot": "^1.3.1"
   },

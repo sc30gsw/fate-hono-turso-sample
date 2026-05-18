@@ -69,11 +69,16 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 
 ## Architecture
 
-Bun workspaces monorepo with three packages — see `README.md` for the table and ports.
+Bun workspaces monorepo. See `README.md` for the table.
 
-**Strict boundary:** the fate HTTP transport (in `@app/client/server/`) and the application API (in `@app/api`) are independent Bun processes, both running Hono. They share **only** the Drizzle schema via `@app/db`. The Vite dev server proxies `/fate` → `:3001` and `/api` → `:3002`.
+**One Hono process serves the entire backend.** `@app/api` (`:3002`) mounts:
+- `/api/auth/*` — Better Auth handler
+- `/api/health`  — uptime probe
+- `/fate/*`     — fate native HTTP transport (queries + mutations + live SSE), via `createHonoFateHandler(fate)` with `app.all("/fate/*", ...)` per the [official fate example](https://github.com/nkzw-tech/fate/blob/main/example/server-drizzle/src/index.tsx).
 
-**Stack:** Bun 1.3.9 · React 19.2 (Compiler enabled via `babel-plugin-react-compiler` in `packages/client/vite.config.ts`) · Vite · TanStack Router · TanStack Form · fate · Hono (everywhere on the server side, including the fate transport via `createHonoFateHandler` and the REST API) · Drizzle (libSQL/Turso) · valibot (client forms + `@hono/valibot-validator` server-side) · `better-result` (client I/O boundary) · misina · vite-plus / fallow / react-doctor.
+The Vite dev server (`@app/client`, `:5173`) proxies both `/api/*` and `/fate/*` to `:3002`, so the browser sees same-origin cookies for Better Auth. There is no separate "fate server" process.
+
+**Stack:** Bun 1.3.9 · React 19.2 (Compiler enabled via `babel-plugin-react-compiler` in `packages/client/vite.config.ts`) · Vite (+ `vite-tsconfig-paths` for cross-workspace `~/*` resolution) · TanStack Router · TanStack Form · fate (`@nkzw/fate` + `react-fate`) · Hono · Drizzle (libSQL/Turso) · Better Auth · valibot (client forms + `@hono/valibot-validator` server-side) · `better-result` (client I/O boundary) · misina · vite-plus / fallow / react-doctor.
 
 ## Conventions
 
@@ -85,7 +90,7 @@ All conventions live in `.claude/rules/`. Phase 1 highlights Claude should not v
 - Types: `type` only — `interface` is banned (hook-enforced)
 - Exports: named only; `export default` allowed only in `src/routes/*` and `*.config.ts` (hook-enforced)
 - Errors (client): `better-result`; no `try-catch` in `packages/client/` (hook-enforced)
-- Errors (server): `throw new HTTPException(code, { message })` from `hono/http-exception` + `app.onError`; no `better-result` inside `@app/api` or `@app/client/server`
+- Errors (server): `throw new HTTPException(code, { message })` from `hono/http-exception` + `app.onError`; no `better-result` inside `@app/api`
 - React: function declarations for components/hooks; no manual `useMemo`/`useCallback` (Compiler handles it)
 - Comments: explain *why*, never *what*
 
@@ -93,15 +98,17 @@ All conventions live in `.claude/rules/`. Phase 1 highlights Claude should not v
 
 ## Stack Rules
 
-- **fate (`@app/client`)** — see `.claude/rules/fate-best-practices.md`.
-  Project deviation: the fate HTTP transport lives in `@app/client/server/` (Hono on `Bun.serve` via `createHonoFateHandler`). Vite plugin entry — `module: './server/fate.ts'`.
+- **fate** — see `.claude/rules/fate-best-practices.md`. Server module lives at
+  `packages/api/src/modules/fate/fate.ts`; the Vite plugin references it via
+  `module: '../api/src/modules/fate/fate.ts'`.
 
-- **Hono (`@app/api` + `@app/client/server`)** — see `.claude/rules/hono-best-practices.md`.
-  Project deviation: two separate Hono apps. `@app/api` serves `/api/*` for non-fate concerns (auth, health, ...). `@app/client/server` is dedicated to fate's `/fate` and `/fate/live`. Never mix routes across them.
+- **Hono** — see `.claude/rules/hono-best-practices.md`. Single Hono app inside
+  `packages/api/src/api.ts` composes auth + health + fate via `.route()` /
+  `.all("/fate/*", ...)`. Add new feature modules under `packages/api/src/modules/`.
 
 ## Scripts
 
-See `package.json` (root + per-package). Most-used: `bun run dev` (3-process concurrent), `bun run check`, `bun run test`, `bun run doctor` (react-doctor), `bun run fallow` (dead-code), `bun run db:push`. Env-management helpers: `bun run env:{set,get,ls,keypair,encrypt,decrypt}` — see `.claude/rules/common/dotenvx.md`.
+See `package.json` (root + per-package). Most-used: `bun run dev` (2-process concurrent: api on :3002, vite on :5173), `bun run check`, `bun run test`, `bun run doctor` (react-doctor), `bun run fallow` (dead-code), `bun run db:push`. Env-management helpers: `bun run env:{set,get,ls,keypair,encrypt,decrypt}` — see `.claude/rules/common/dotenvx.md`.
 
 ## Environment
 
@@ -109,9 +116,10 @@ All `dev` / `start` / `build` / `db:*` scripts are wrapped with `dotenvx run -f 
 
 ## Common Pitfalls
 
-- **Don't import `@app/db` directly from the browser bundle.** It pulls in `@libsql/client`. Import only from server-side files (`@app/client/server/*.ts` and `@app/api/src/**`).
-- **Don't add fate routes to `@app/api`.** fate's HTTP transport lives in `@app/client/server/`. Two Hono apps, two roles.
+- **Don't import `@app/db` directly from the browser bundle.** It pulls in `@libsql/client`. Import only from server-side files (`packages/api/src/**`). The client reuses Entity *types* via `@app/api/fate/views` (a subpath export that strips the runtime).
+- **Don't split fate into its own Hono process.** The repo previously did; we consolidated. Mount new fate concerns inside `packages/api/src/modules/fate/` and they're exposed via the single Hono app.
 - **Don't return `Result` from `@app/api` handlers.** Use `throw new HTTPException(code, { message })` and `app.onError`.
 - **Don't extract Hono handlers into named `(c) => {...}` functions.** Path-param and validator inference relies on inline definitions. Use `factory.createHandlers()` from `hono/factory` if you must.
+- **Don't add `~/*` paths to `packages/db/tsconfig.json`.** That package's barrel (`db.ts`) needs `./` relative imports so it resolves from downstream packages (fate's Vite SSR runner can't read nested tsconfig paths even with `vite-tsconfig-paths`).
 - **Don't mock the database in tests.** Use a `file:./test.db` libSQL instance for integration; pure-function tests don't need DB.
 - **Don't run package managers directly inside workspaces.** Use `bun --filter @app/<name> <script>` or root scripts.

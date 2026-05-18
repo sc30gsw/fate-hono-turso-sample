@@ -223,11 +223,12 @@ describe("health", () => {
 | Server-side error handling | `throw new HTTPException(code, opts)` + `app.onError` | `better-result` |
 | Client-side I/O error handling | `better-result` | `throw` |
 | DB access from `@app/api` | `@app/db` (Drizzle) | raw SQL strings, ad-hoc clients |
-| fate routes (`/fate`, `/fate/live`) | `@app/client/server/` (Hono + `createHonoFateHandler`) | `@app/api` |
+| fate routes (`/fate/*`) | `packages/api/src/modules/fate/` mounted via `app.all("/fate/*", createHonoFateHandler(fate))` in `api.ts` | a second Hono process |
 
 ## Project-Specific Pitfalls
 
-- **Two Hono apps in this monorepo.** `@app/api` exposes `/api/*` on `:3002`. `@app/client/server` exposes `/fate` and `/fate/live` on `:3001` and is dedicated to fate's transport. Don't mix routes across them.
-- **`createHonoFateHandler` lives in `@app/client/server` only.** It is the official fate adapter and the *only* reason the fate server uses Hono. Treat it as the integration boundary.
-- **No controllers, even in `modules/`.** A module's `index.ts` (or single-file `<feature>.ts`) is just a chained `new Hono()` instance. Resist the urge to extract a `Controller` class — it kills RPC inference.
-- **One `AppType` export per Hono app.** `@app/api/src/index.ts` exports `AppType`. If we add an RPC client in `@app/client`, it imports that type and runs `hc<AppType>("/api")`. Don't break the chain or types fall apart silently.
+- **One Hono app for the whole backend.** `packages/api/src/api.ts` mounts auth, health, and fate. Adding a new feature = a new `modules/<feature>/` folder + `.route("/api/<feature>", feature)` line. No second process, no separate port.
+- **`createHonoFateHandler` is composed with `.all("/fate/*", ...)`** per the official example (`nkzw-tech/fate`, `example/server-drizzle/src/index.tsx`). The wildcard catches both `POST /fate` and `POST /fate/live` — the handler dispatches internally by request body.
+- **No controllers, even in `modules/`.** A module's single-file `<feature>.ts` is just a chained `new Hono()` instance. Resist the urge to extract a `Controller` class — it kills RPC inference.
+- **One `AppType` export per Hono app.** `packages/api/src/api.ts` exports `AppType`. If we add an RPC client in `@app/client`, it imports that type and runs `hc<AppType>("/")`. Don't break the chain or types fall apart silently.
+- **`@app/db`'s barrel uses relative `./` imports, not `~/`.** Cross-workspace loading via the fate Vite plugin SSR runner can't read nested tsconfig paths. The `~/*` alias is intentionally absent from `packages/db/tsconfig.json`.
