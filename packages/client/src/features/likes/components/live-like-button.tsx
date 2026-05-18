@@ -1,6 +1,6 @@
 import type { Post } from "@app/api/features/posts/views";
 import { Suspense } from "react";
-import { useRequest, useView } from "react-fate";
+import { useLiveView, useRequest } from "react-fate";
 
 import {
   LikeButtonContent,
@@ -8,21 +8,21 @@ import {
 } from "~/features/likes/components/like-button-content";
 import { PostLikeView } from "~/features/posts/views/post-views";
 
-type LikeButtonProps = {
+type LiveLikeButtonProps = {
   postId: Post["id"];
 };
 
-export function LikeButton(props: LikeButtonProps) {
+export function LiveLikeButton(props: LiveLikeButtonProps) {
   return (
     <Suspense fallback={<LikeButtonFallback />}>
-      <LikeButtonData {...props} />
+      <LiveLikeButtonData {...props} />
     </Suspense>
   );
 }
 
-function LikeButtonData({ postId }: LikeButtonProps) {
+function LiveLikeButtonData({ postId }: LiveLikeButtonProps) {
   const { post: postRef } = useRequest({ post: { id: postId, view: PostLikeView } });
-  const post = useView(PostLikeView, postRef);
+  const post = useLiveView(PostLikeView, postRef);
 
   return <LikeButtonContent post={post} />;
 }

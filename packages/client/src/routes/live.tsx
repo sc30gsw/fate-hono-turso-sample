@@ -1,7 +1,7 @@
 import { createRoute, Link } from "@tanstack/react-router";
 import { useRequest } from "react-fate";
 
-import { LivePostCard } from "~/features/posts/components/post-card";
+import { LivePostCard } from "~/features/posts/components/live-post-card";
 import { PostListItemView } from "~/features/posts/views/post-views";
 import { Route as AuthenticatedRoute } from "~/routes/authenticated";
 

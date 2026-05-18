@@ -3,7 +3,7 @@ import { useLiveListView, useLiveView, useRequest } from "react-fate";
 
 import { CommentCard } from "~/features/comments/components/comment-card";
 import { CommentForm } from "~/features/comments/components/comment-form";
-import { LiveLikeButton } from "~/features/likes/components/like-button";
+import { LiveLikeButton } from "~/features/likes/components/live-like-button";
 import { AuthorBadge } from "~/features/posts/components/author-badge";
 import { DeletePostButton } from "~/features/posts/components/delete-post-button";
 import { PostDetailView, postCommentsConnection } from "~/features/posts/views/post-views";
@@ -34,7 +34,7 @@ function LivePostDetailPage() {
           })}
         </p>
         <div className="flex items-center gap-3">
-          <LiveLikeButton post={postRef} />
+          <LiveLikeButton postId={String(post.id)} />
           <span className="text-sm text-neutral-500">💬 {post.commentCount}</span>
           <DeletePostButton authorId={String(post.author.id)} postId={String(post.id)} />
         </div>
