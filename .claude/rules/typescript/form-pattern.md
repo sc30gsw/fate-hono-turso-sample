@@ -6,12 +6,24 @@
 |---|---|
 | Field state, validation orchestration, accessibility wiring | `@tanstack/react-form` (`useForm`, `form.Field`, `form.Subscribe`) |
 | Submitting / canSubmit flags | `form.state.isSubmitting` + `form.state.canSubmit` (built-in) |
-| Submit-time errors (network / 401 / 500 / 409 / etc.) | `form.state.errorMap.onSubmit` via `formApi.setErrorMap` |
+| Submit-time errors (network / 401 / 500 / 409 / etc.) | `validators.onSubmitAsync` returning `{ form, fields }`, surfaced via `state.errorMap.onSubmit` |
 | Field-level validation errors | `field.state.meta.errors` (populated by validators) |
 | Schema validation (synchronous, client + server) | `valibot` 1.x — Standard Schema compatible, **no adapter needed** |
-| Schema placement | `features/<feature>/schemas/<name>-schema.ts` |
+| Schema placement (field shape) | `features/<feature>/schemas/<name>-schema.ts` |
+| Schema placement (route search params) | `features/<feature>/schemas/search-params/<name>-search-schema.ts` |
 
 **TanStack Form owns the entire form lifecycle.** Do NOT introduce `useState`, `useReducer`, `useTransition`, `useFormStatus`, or `useMutation` to track submitting / pending / server-error state. They duplicate machinery that already exists in `form.state` and they desync from the form's own view of the world.
+
+## File layout
+
+Forms are split into two files:
+
+| File | Responsibility |
+|---|---|
+| `routes/<route>.tsx` | Thin route shell. Defines the route, mounts the page section, renders the form component. |
+| `features/<feature>/components/<feature>-form.tsx` | The actual `useForm` call, validators, fields, and `form.Subscribe` plumbing. |
+
+The form component uses `getRouteApi("/path")` for typed `navigate` / `search` access instead of the global `useNavigate()`. This keeps the form decoupled and the typed search params flow through automatically.
 
 ## Schema file shape
 
@@ -19,61 +31,62 @@
 // features/auth/schemas/sign-in-schema.ts
 import * as v from "valibot";
 
-export const SignInSchema = v.object({
+export const signInSchema = v.object({
   email: v.pipe(v.string(), v.email("Enter a valid email address.")),
   password: v.pipe(v.string(), v.minLength(8, "Password must be at least 8 characters.")),
 });
 
-export type SignInInput = v.InferOutput<typeof SignInSchema>;
+export type SignInInput = v.InferOutput<typeof signInSchema>;
 export const defaultSignInValues: SignInInput = { email: "", password: "" };
 ```
 
-Export three things per schema file:
-- The schema (`<Name>Schema`).
+Export three things per schema file (camelCase value names; UpperCamelCase type name):
+- The schema (`<name>Schema`).
 - `<Name>Input` derived via `v.InferOutput`.
-- `default<Name>Values` so the route never has to spell out blank defaults inline.
+- `default<Name>Values` so the form never has to spell out blank defaults inline.
 
 ## Form component shape
 
 ```tsx
 import { useForm } from "@tanstack/react-form";
+import { getRouteApi } from "@tanstack/react-router";
 
-import { defaultSignInValues, SignInSchema } from "~/features/auth/schemas/sign-in-schema";
+import { defaultSignInValues, signInSchema } from "~/features/auth/schemas/sign-in-schema";
 import { signIn } from "~/lib/auth-client";
 
-export function SignInPage() {
-  const navigate = useNavigate();
+const routeApi = getRouteApi("/auth/sign-in");
+
+export function SignInForm() {
+  const navigate = routeApi.useNavigate();
+  const search = routeApi.useSearch();
 
   const form = useForm({
     defaultValues: defaultSignInValues,
-    //? valibot 1.x implements Standard Schema, so TanStack Form accepts the schema
-    //? directly. Do not install `@tanstack/valibot-adapter`.
-    validators: { onChange: SignInSchema },
-    //? Async onSubmit is awaited; `state.isSubmitting` is true for the whole flow
-    //? (call + navigation). Server failures go into `errorMap.onSubmit` via
-    //? `formApi.setErrorMap`. No useState, useTransition, useFormStatus needed.
-    onSubmit: async ({ value, formApi }) => {
-      formApi.setErrorMap({ onSubmit: undefined });        // clear stale
-      const result = await signIn.email(value);
-      if (result.error) {
-        formApi.setErrorMap({
-          onSubmit: {
-            form: result.error.message ?? "Sign-in failed.",
-            // Optional: route a server-side validation error to a specific field.
-            // fields: { email: "Email is already taken." }
-          },
-        });
-        return;
-      }
-      await navigate({ to: "/" });
+    validators: {
+      //? Sync field-shape validation (Standard Schema, no adapter).
+      onChange: signInSchema,
+      //? Server validation runs on submit. Returning `{ form, fields }` populates
+      //? `state.errorMap.onSubmit` with a typed shape inferred from this function's
+      //? return — no `as` cast needed.
+      onSubmitAsync: async ({ value }) => {
+        const result = await signIn.email(value);
+        if (result.error) {
+          return { form: result.error.message ?? "Sign-in failed.", fields: {} };
+        }
+        return null;
+      },
+    },
+    //? Reached only when every validator resolves without errors.
+    onSubmit: async () => {
+      await navigate({ to: search.redirect ?? "/" });
     },
   });
 
   return (
     <form
       noValidate
-      onSubmit={(event) => {
-        event.preventDefault();
+      onSubmit={(e) => {
+        e.preventDefault();
         void form.handleSubmit();
       }}
     >
@@ -84,7 +97,7 @@ export function SignInPage() {
             <input
               autoComplete="email"
               onBlur={field.handleBlur}
-              onChange={(event) => field.handleChange(event.target.value)}
+              onChange={(e) => field.handleChange(e.target.value)}
               type="email"
               value={field.state.value}
             />
@@ -95,10 +108,9 @@ export function SignInPage() {
         )}
       </form.Field>
 
-      {/* Submit-time / server errors live in form state, not local useState. */}
-      <form.Subscribe
-        selector={(state) => (state.errorMap.onSubmit as { form?: string } | undefined)?.form ?? null}
-      >
+      {/* errorMap.onSubmit merges sync+async submit validator errors; TanStack Form
+          unwraps `{ form }` so the slot is typed `string | null` directly. */}
+      <form.Subscribe selector={(state) => state.errorMap.onSubmit ?? null}>
         {(formError) => (formError ? <p>{formError}</p> : null)}
       </form.Subscribe>
 
@@ -125,57 +137,61 @@ export function SignInPage() {
 | "Has the form ever been submitted?" | `state.isSubmitted` |
 | "Did the last submit succeed?" | `state.isSubmitSuccessful` |
 | Field validation errors | `field.state.meta.errors` |
-| Form-level submit / server errors | `state.errorMap.onSubmit` (and `.fields` for per-field server errors) |
-| Async validator errors | `state.errorMap.onSubmitAsync` |
+| Submit-time / server errors | `state.errorMap.onSubmit` (sync `onSubmit` + async `onSubmitAsync` merge here) |
 
 Read these via `form.Subscribe` with a `selector` so only the consuming subtree re-renders.
 
 ## Server / API error handling
 
-The canonical way to surface a failed API call (sign-in failed, email taken, etc.) is:
+The canonical pattern: do the server call inside `validators.onSubmitAsync` and return the error shape. TanStack Form routes the result into `state.errorMap.onSubmit` with the slot's type inferred from the validator's return — no manual cast.
 
 ```ts
-onSubmit: async ({ value, formApi }) => {
-  formApi.setErrorMap({ onSubmit: undefined });   // clear stale errors on retry
-  const result = await api.call(value);
-  if (result.error) {
-    formApi.setErrorMap({
-      onSubmit: {
+validators: {
+  onChange: signInSchema,
+  onSubmitAsync: async ({ value }) => {
+    const result = await api.call(value);
+    if (result.error) {
+      return {
         form: result.error.message,                // form-level banner
-        fields: { email: "Already taken." },        // route to a specific field
-      },
-    });
-    return;
-  }
-  // success
+        fields: { email: "Already taken." },        // route to a specific field ({} if none)
+      };
+    }
+    return null;                                    // success → onSubmit runs next
+  },
+},
+onSubmit: async () => {
+  // Reached only when validators succeed. Action (navigate, refresh, etc.) lives here.
 },
 ```
 
-The `form.Subscribe` selectors above pick the slice they need. Field components automatically surface their `fields[name]` value alongside validator errors (`field.state.meta.errors`).
+The `form` field on the validator return becomes a `string | null` in `state.errorMap.onSubmit`. The `fields` map populates each field's `field.state.meta.errors` automatically.
 
-When you need **async validation** (e.g., "is this username available?") that runs as part of submit, use `validators.onSubmitAsync` instead — see the [TanStack Form validation guide](https://tanstack.com/form/latest/docs/framework/react/guides/validation). It returns the same `{ form, fields }` shape and populates `errorMap.onSubmitAsync`.
+`GlobalFormValidationError` requires both `form` and `fields`. Use `fields: {}` when you only have a form-level message; populate it to route per-field server errors that appear next to each field via `form.Field`.
 
 ## Rules
 
 ### DO
 
-- **Use `form.state.isSubmitting`** to drive the submit button's disabled / label state via `form.Subscribe`.
-- **Use `formApi.setErrorMap({ onSubmit: {...} })` inside `onSubmit`** to publish API failures into form state.
-- **Clear stale submit errors at the top of `onSubmit`** (`setErrorMap({ onSubmit: undefined })`) so retry attempts start clean.
-- **Use `form.Subscribe` with `selector`** for derived state like `canSubmit`, `isSubmitting`, or individual `errorMap` slots. It avoids re-rendering the whole form on every keystroke.
+- **Put the server call in `validators.onSubmitAsync`** so the error type flows into `state.errorMap.onSubmit` with full type inference. Reserve the top-level `onSubmit` for the success action (navigate, refresh, close modal).
+- **Use `form.state.isSubmitting`** for the submit button's disabled / label state via `form.Subscribe`. `useTransition` is not needed.
+- **Use `form.Subscribe` with `selector`** for derived state. It avoids re-rendering the whole form on every keystroke.
 - **Render field errors only after `meta.isTouched`** to keep the empty initial state quiet.
-- **Place schemas under `features/<feature>/schemas/`** with kebab-case file names ending in `-schema.ts`.
+- **Place schemas under `features/<feature>/schemas/`** with kebab-case file names ending in `-schema.ts`. Share search-param schemas across related routes (`schemas/search-params/<topic>-search-schema.ts`).
 - **Set `noValidate` on the `<form>`** so the browser's built-in validation doesn't fight valibot.
-- **`async onSubmit` returns a Promise that TanStack Form awaits** — this is what keeps `isSubmitting` true for the full duration. Make sure you don't fire-and-forget.
+- **Use `getRouteApi("/path").useNavigate() / useSearch()`** inside form components instead of global `useNavigate()`. The typed route API keeps the search shape inferred.
+- **Use single-letter `e` for event handler parameters** (`onChange={(e) => ...}`, `onSubmit={(e) => { e.preventDefault(); ... }}`).
+- **`async onSubmit` and `async onSubmitAsync` are awaited internally** — that's what keeps `isSubmitting` true for the full duration. Make sure you don't fire-and-forget.
 
 ### DON'T
 
-- **Don't add `useState` for "submitError" / "isPending" / "isSubmitting".** That's `form.state.errorMap.onSubmit` and `form.state.isSubmitting`. Two sources of truth always desync.
-- **Don't wrap the submit in `useTransition` or `useFormStatus`.** TanStack Form's `isSubmitting` already covers the full async flow because it awaits your `onSubmit`. Adding `useTransition` produces a second pending flag that races the form's own.
-- **Don't import `@tanstack/valibot-adapter`.** Not needed since valibot 1.x is Standard Schema compatible. Pass the schema directly to `validators.onChange`.
+- **Don't add `useState` for "submitError" / "isPending" / "isSubmitting".** Those are `form.state.errorMap.onSubmit` and `form.state.isSubmitting`. Two sources of truth always desync.
+- **Don't wrap the submit in `useTransition` or `useFormStatus`.** TanStack Form's `isSubmitting` already covers the full async flow because it awaits your validators and `onSubmit`. Adding `useTransition` produces a second pending flag that races the form's own.
+- **Don't put the server call in the top-level `onSubmit` and then `formApi.setErrorMap`.** That works but loses the type inference from the validator's return — you have to cast `errorMap.onSubmit` because it's `never` when no `onSubmit` validator is configured. Use `validators.onSubmitAsync` instead.
+- **Don't import `@tanstack/valibot-adapter` for the form's `validators`.** Not needed since valibot 1.x is Standard Schema compatible. (The same adapter IS used for TanStack Router's `validateSearch` — different concern, same package, see `auth-guard.md`.)
 - **Don't use `useMutation` (TanStack Query) for form submission.** Forms are inherently transient state; `useMutation` is for caching server state. Mixing them creates two stores for the same lifecycle.
-- **Don't `throw` from `onSubmit` for expected failures.** Throwing leaves the error nowhere visible to the UI. Set it on the form via `setErrorMap`. Reserve throws for truly unexpected bugs that should reach the Error Boundary.
-- **Don't access errors as strings naively** — `field.state.meta.errors[0]` may be a `string` (custom message) or an object with `.message`. The pattern above handles both with `String(err?.message ?? err)`.
+- **Don't `throw` from validators / `onSubmit` for expected failures.** Return the error shape from `onSubmitAsync` instead. Reserve throws for unexpected bugs that should reach the Error Boundary.
+- **Don't cast `state.errorMap.onSubmit`** (`as { form?: string } | undefined` and friends). If you're reaching for a cast, the validator setup is wrong — wire the server call through `validators.onSubmitAsync` and the type comes for free.
+- **Don't access errors as strings naively** — `field.state.meta.errors[0]` may be a `string` (custom message) or an object with `.message`. Handle both with `String(err?.message ?? err)`.
 
 ### When to escape this pattern
 
@@ -187,3 +203,4 @@ When you need **async validation** (e.g., "is this username available?") that ru
 - [`valibot-validation.md`](./valibot-validation.md) — schema placement and `InferOutput` patterns.
 - [`react-conventions.md`](./react-conventions.md) — named exports, function declarations, React Compiler.
 - [`no-index-files.md`](./no-index-files.md) — file-naming convention applied to schemas and routes.
+- [`../auth-guard.md`](../auth-guard.md) — Better Auth + TanStack Router integration that this form pattern plugs into.
