@@ -42,5 +42,3 @@ export const auth = betterAuth({
   telemetry: { enabled: false },
   trustedOrigins,
 });
-
-export type Auth = typeof auth;
