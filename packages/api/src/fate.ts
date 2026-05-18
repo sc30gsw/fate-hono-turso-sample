@@ -6,7 +6,7 @@ import { createDrizzleSourceAdapter } from "@nkzw/fate/server/drizzle";
 
 import { Root } from "./features/posts/roots";
 import { liveEventBus } from "./live";
-import { mutations } from "./modules/fate/mutations";
+import { mutations } from "./mutations";
 
 export type FateContext = { sessionUser: Pick<UserRow, "id"> | undefined };
 

@@ -7,8 +7,8 @@ import { type LikePostInput, likePostInput } from "~/features/likes/schemas/like
 import { liveEventBus } from "~/live";
 
 export const likePost = {
-  input: likePostInput,
   type: "Post",
+  input: likePostInput,
   resolve: async ({ ctx, input }: { ctx: FateContext; input: LikePostInput }) => {
     const userId = requireUserId(ctx);
 

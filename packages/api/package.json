@@ -3,7 +3,12 @@
   "private": true,
   "type": "module",
   "exports": {
-    "./fate/views": "./src/modules/fate/views.ts"
+    "./features/auth/views": "./src/features/auth/views.ts",
+    "./features/comments/schemas": "./src/features/comments/schemas/comments-schema.ts",
+    "./features/comments/views": "./src/features/comments/views.ts",
+    "./features/likes/schemas": "./src/features/likes/schemas/likes-schema.ts",
+    "./features/posts/schemas": "./src/features/posts/schemas/posts-schema.ts",
+    "./features/posts/views": "./src/features/posts/views.ts"
   },
   "scripts": {
     "build": "dotenvx run -f ../../.env -- bun build src/api.ts --target bun --outdir dist",
