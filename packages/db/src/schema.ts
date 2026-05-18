@@ -1,7 +1,7 @@
 import { relations, sql } from "drizzle-orm";
 import { integer, primaryKey, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
-import { user } from "~/auth-schema";
+import { user } from "./auth-schema";
 
 export const post = sqliteTable("post", {
   id: text("id").primaryKey(),
@@ -61,8 +61,8 @@ export const likeRelations = relations(like, ({ one }) => ({
   user: one(user, { fields: [like.userId], references: [user.id] }),
 }));
 
-export type Post = typeof post.$inferSelect;
-export type NewPost = typeof post.$inferInsert;
-export type Comment = typeof comment.$inferSelect;
-export type NewComment = typeof comment.$inferInsert;
-export type Like = typeof like.$inferSelect;
+export type PostRow = typeof post.$inferSelect;
+export type NewPostRow = typeof post.$inferInsert;
+export type CommentRow = typeof comment.$inferSelect;
+export type NewCommentRow = typeof comment.$inferInsert;
+export type LikeRow = typeof like.$inferSelect;
