@@ -1,10 +1,10 @@
-# fate-elysia-turso-sample
+# fate-hono-turso-sample
 
 A sample monorepo exploring [`react-fate`](https://fate.technology/) (normalized React data client) combined with [Hono](https://hono.dev/), [Drizzle ORM](https://orm.drizzle.team/), and [Turso](https://turso.tech/) (libSQL) on the Bun runtime.
 
 > Phase 1: environment scaffolding only. Domain code lands in Phase 2.
 >
-> Naming note: the directory is still called `fate-elysia-turso-sample` for historical reasons. The runtime stack now uses Hono on both server packages instead of Elysia.
+> Naming note: the directory is still called `fate-hono-turso-sample` for historical reasons. The runtime stack now uses Hono on both server packages instead of Hono.
 
 ## Architecture
 

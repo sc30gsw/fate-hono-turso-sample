@@ -212,7 +212,7 @@ describe("health", () => {
 });
 ```
 
-`app.request()` runs the full Hono lifecycle in-process — no HTTP server needed. Equivalent to Elysia's `app.handle(new Request(...))` if you've worked with that.
+`app.request()` runs the full Hono lifecycle in-process — no HTTP server needed. Equivalent to Hono's `app.handle(new Request(...))` if you've worked with that.
 
 ## Project Boundaries
 

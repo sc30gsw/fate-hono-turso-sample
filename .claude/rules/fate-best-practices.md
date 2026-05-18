@@ -222,7 +222,7 @@ export default defineConfig({
 
 The Vite dev server proxies `/fate` and `/fate/live` to `:3001`, so the browser uses same-origin URLs.
 
-**DON'T** mount fate routes inside `@app/api` (Elysia). The two stacks stay independent. If you need an admin endpoint that triggers a fate mutation server-side, call the action directly via the fate server export — don't HTTP-hop.
+**DON'T** mount fate routes inside `@app/api` (Hono). The two stacks stay independent. If you need an admin endpoint that triggers a fate mutation server-side, call the action directly via the fate server export — don't HTTP-hop.
 
 ## Project Boundaries
 
@@ -238,8 +238,8 @@ The Vite dev server proxies `/fate` and `/fate/live` to `:3001`, so the browser 
 
 fate excels at normalized entity graphs (posts, users, comments) where many components need overlapping slices. It's a poor fit for:
 
-- One-off REST endpoints that don't fit the entity model (health checks, file uploads, OAuth callbacks) — use `@app/api` (Elysia) instead and call from the client via `misina`
+- One-off REST endpoints that don't fit the entity model (health checks, file uploads, OAuth callbacks) — use `@app/api` (Hono) instead and call from the client via `misina`
 - Streaming binary data
-- Webhooks (no UI — write a plain Elysia route)
+- Webhooks (no UI — write a plain Hono route)
 
 When you reach for fate for one of these, you're doing it wrong. Reach for `@app/api` instead.
