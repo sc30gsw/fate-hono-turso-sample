@@ -1,12 +1,9 @@
 import { authSchema, db } from "@app/db";
+import { requireEnv } from "@app/shared/env";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 
-const secret = process.env.BETTER_AUTH_SECRET;
-
-if (!secret) {
-  throw new Error("BETTER_AUTH_SECRET is required");
-}
+const secret = requireEnv("BETTER_AUTH_SECRET", process.env.BETTER_AUTH_SECRET);
 
 const trustedOriginsRaw = process.env.BETTER_AUTH_TRUSTED_ORIGINS ?? process.env.VITE_APP_BASE_URL;
 const trustedOrigins =
@@ -19,10 +16,6 @@ if (trustedOrigins.length === 0) {
   throw new Error("BETTER_AUTH_TRUSTED_ORIGINS (or VITE_APP_BASE_URL as fallback) is required");
 }
 
-//? Single shared Better Auth instance.
-//? @app/api mounts `auth.handler` at /api/auth/*.
-//? @app/client/server reads `auth.api.getSession({ headers })` from the fate context.
-//? Both processes hit the same `db` so session validation works cross-process.
 export const auth = betterAuth({
   secret,
   database: drizzleAdapter(db, {
