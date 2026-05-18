@@ -20,6 +20,12 @@ const postSummarySelection = {
 
 export const PostListItemView = view<Post>()(postSummarySelection);
 
+export const PostLikeView = view<Post>()({
+  id: true,
+  likedByViewer: true,
+  likeCount: true,
+});
+
 export const CommentView = view<Comment>()({
   id: true,
   content: true,
@@ -34,7 +40,11 @@ export const postCommentsConnection = {
 } as const;
 
 export const PostDetailView = view<Post>()({
-  ...postSummarySelection,
+  id: true,
+  title: true,
+  createdAt: true,
+  author: UserView,
+  commentCount: true,
   content: true,
   comments: postCommentsConnection,
 });

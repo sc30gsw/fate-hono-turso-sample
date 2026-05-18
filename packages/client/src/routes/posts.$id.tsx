@@ -35,7 +35,7 @@ function PostDetailPage() {
           })}
         </p>
         <div className="flex items-center gap-3">
-          <LikeButton likeCount={post.likeCount} postId={String(post.id)} />
+          <LikeButton post={postRef} />
           <span className="text-sm text-neutral-500">💬 {post.commentCount}</span>
           <Link
             className="ml-auto text-sm text-blue-700 underline"

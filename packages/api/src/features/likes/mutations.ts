@@ -27,7 +27,9 @@ export const likePost = {
       .from(like)
       .where(eq(like.postId, input.postId));
 
-    liveEventBus.update("Post", input.postId, { changed: ["likeCount"] });
-    return { id: input.postId, likeCount: likeCountRow?.likeCount ?? 0 };
+    const likedByViewer = inserted.length > 0;
+
+    liveEventBus.update("Post", input.postId, { changed: ["likeCount", "likedByViewer"] });
+    return { id: input.postId, likedByViewer, likeCount: likeCountRow?.likeCount ?? 0 };
   },
 } as const;

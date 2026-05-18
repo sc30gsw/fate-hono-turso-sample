@@ -1,7 +1,8 @@
 import { db, like, type PostRow } from "@app/db";
 import { computed, count, dataView, type Entity, list } from "@nkzw/fate/server";
-import { count as sqlCount, eq } from "drizzle-orm";
+import { and, count as sqlCount, eq } from "drizzle-orm";
 
+import type { FateContext } from "../../fate";
 import { type User, userDataView } from "../auth/views";
 import { commentDataView, type Comment } from "../comments/views";
 
@@ -23,6 +24,20 @@ const basePost = {
         .where(eq(like.postId, item.id));
 
       return row?.count ?? 0;
+    },
+  }),
+  likedByViewer: computed<PostRow, boolean, FateContext>({
+    resolve: async (item, _deps, ctx) => {
+      if (!ctx?.sessionUser) {
+        return false;
+      }
+
+      const [row] = await db
+        .select({ count: sqlCount() })
+        .from(like)
+        .where(and(eq(like.postId, item.id), eq(like.userId, ctx.sessionUser.id)));
+
+      return (row?.count ?? 0) > 0;
     },
   }),
 } as const satisfies Parameters<ReturnType<typeof dataView<PostRow>>>[0];
