@@ -16,9 +16,11 @@ export function SignUpForm() {
       onChange: signUpSchema,
       onSubmitAsync: async ({ value }) => {
         const result = await signUp.email(value);
+
         if (result.error) {
           return { form: result.error.message ?? "Sign-up failed.", fields: {} };
         }
+
         return null;
       },
     },
