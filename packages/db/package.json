@@ -1,0 +1,30 @@
+{
+  "name": "@app/db",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./schema": "./src/schema.ts",
+    "./client": "./src/client.ts"
+  },
+  "scripts": {
+    "check": "vp check",
+    "db:generate": "dotenvx run -f ../../.env -- drizzle-kit generate",
+    "db:push": "dotenvx run -f ../../.env -- drizzle-kit push",
+    "db:studio": "dotenvx run -f ../../.env -- drizzle-kit studio",
+    "fix": "vp check --fix",
+    "fmt": "vp fmt",
+    "lint": "vp lint",
+    "test": "vp test"
+  },
+  "dependencies": {
+    "@libsql/client": "^0.17.3",
+    "drizzle-orm": "^0.45.2"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "drizzle-kit": "^0.31.10",
+    "vite": "npm:@voidzero-dev/vite-plus-core@^0.1.18",
+    "vite-plus": "latest"
+  }
+}

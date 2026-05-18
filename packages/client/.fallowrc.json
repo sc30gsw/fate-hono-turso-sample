@@ -1,0 +1,4 @@
+{
+  "ignoreDependencies": ["better-typescript-lib", "babel-plugin-react-compiler", "@app/db"],
+  "ignorePatterns": []
+}

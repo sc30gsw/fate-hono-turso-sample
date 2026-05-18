@@ -1,0 +1,30 @@
+{
+  "name": "fate-hono-turso-sample",
+  "private": true,
+  "type": "module",
+  "packageManager": "bun@1.3.9",
+  "workspaces": ["packages/*"],
+  "scripts": {
+    "dev": "concurrently -k -n fate,api,vite -c yellow,cyan,green 'bun --filter @app/client dev:server' 'bun --filter @app/api dev' 'bun --filter @app/client dev:client'",
+    "build": "bun --filter '@app/*' build",
+    "check": "bun --filter '@app/*' check",
+    "fix": "bun --filter '@app/*' fix",
+    "test": "bun --filter '@app/*' test",
+    "doctor": "bun --filter @app/client doctor",
+    "fallow": "bun --filter @app/client fallow",
+    "db:push": "bun --filter @app/db db:push",
+    "db:generate": "bun --filter @app/db db:generate",
+    "db:studio": "bun --filter @app/db db:studio",
+    "env:keypair": "dotenvx keypair",
+    "env:set": "dotenvx set",
+    "env:get": "dotenvx get",
+    "env:ls": "dotenvx ls",
+    "env:encrypt": "dotenvx encrypt",
+    "env:decrypt": "dotenvx decrypt"
+  },
+  "devDependencies": {
+    "@dotenvx/dotenvx": "^1.65.0",
+    "concurrently": "^9.1.2",
+    "typescript": "^5.7.2"
+  }
+}

@@ -1,0 +1,3 @@
+# Phase 2: fate server lives here.
+# - fate.ts (createFateServer + createDrizzleFate; referenced by react-fate/vite)
+# - index.ts (Hono + createHonoFateHandler + Bun.serve on :3001)
