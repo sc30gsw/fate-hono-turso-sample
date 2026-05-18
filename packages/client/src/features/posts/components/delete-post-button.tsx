@@ -1,5 +1,5 @@
 import type { Post } from "@app/api/features/posts/views";
-import { useActionState, useRef } from "react";
+import { useActionState } from "react";
 import { useFateClient } from "react-fate";
 
 export function DeletePostButton({ postId }: Record<"postId", Post["id"]>) {

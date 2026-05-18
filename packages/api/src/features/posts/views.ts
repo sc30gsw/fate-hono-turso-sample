@@ -1,5 +1,6 @@
-import type { PostRow } from "@app/db";
+import { db, like, type PostRow } from "@app/db";
 import { computed, count, dataView, type Entity, list } from "@nkzw/fate/server";
+import { count as sqlCount, eq } from "drizzle-orm";
 
 import { type User, userDataView } from "../auth/views";
 import { commentDataView, type Comment } from "../comments/views";
@@ -15,8 +16,14 @@ const basePost = {
     resolve: (_item, deps) => (deps.count as number | undefined) ?? 0,
   }),
   likeCount: computed<PostRow, number>({
-    select: { count: count("likes") },
-    resolve: (_item, deps) => (deps.count as number | undefined) ?? 0,
+    resolve: async (item) => {
+      const [row] = await db
+        .select({ count: sqlCount() })
+        .from(like)
+        .where(eq(like.postId, item.id));
+
+      return row?.count ?? 0;
+    },
   }),
 } as const satisfies Parameters<ReturnType<typeof dataView<PostRow>>>[0];
 
