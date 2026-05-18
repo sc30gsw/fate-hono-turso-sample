@@ -2,10 +2,22 @@ import type { Comment } from "@app/api/features/comments/views";
 import { useActionState } from "react";
 import { useFateClient } from "react-fate";
 
-export function DeleteCommentButton({ commentId }: Record<"commentId", Comment["id"]>) {
+import { useSession } from "~/lib/auth-client";
+
+type DeleteCommentButtonProps = {
+  authorId: Comment["author"]["id"];
+  commentId: Comment["id"];
+};
+
+export function DeleteCommentButton({ authorId, commentId }: DeleteCommentButtonProps) {
   const fate = useFateClient();
+  const { data: session } = useSession();
   const [result, deleteComment, isPending] = useActionState(fate.actions.deleteComment, null);
   const showError = result && "error" in result && result.error !== undefined;
+
+  if (session?.user.id !== authorId) {
+    return null;
+  }
 
   return (
     <button

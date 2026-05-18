@@ -18,7 +18,10 @@ export function CommentCard({ comment: commentRef }: Record<"comment", ViewRef<"
               timeStyle: "short",
             })}
           </time>
-          <DeleteCommentButton commentId={String(comment.id)} />
+          <DeleteCommentButton
+            authorId={String(comment.author.id)}
+            commentId={String(comment.id)}
+          />
         </div>
       </header>
       <p className="mt-2 whitespace-pre-wrap text-neutral-900">{comment.content}</p>

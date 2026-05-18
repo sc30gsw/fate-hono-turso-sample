@@ -3,16 +3,34 @@ import type { Post } from "@app/api/features/posts/views";
 import { useForm } from "@tanstack/react-form";
 import { useFateClient } from "react-fate";
 
+import { useSession } from "~/lib/auth-client";
+
 export function CommentForm({ postId }: Record<"postId", Post["id"]>) {
   const fate = useFateClient();
+  const { data: session } = useSession();
 
   const form = useForm({
     defaultValues: defaultCommentBodyValues,
     validators: {
       onChange: commentBodyInput,
       onSubmitAsync: async ({ value }) => {
+        const now = new Date();
         const result = await fate.mutations.addComment({
           input: { postId, content: value.content },
+          insert: "after",
+          optimistic: session?.user
+            ? {
+                id: `optimistic:${crypto.randomUUID()}`,
+                author: {
+                  id: session.user.id,
+                  image: session.user.image,
+                  name: session.user.name,
+                },
+                content: value.content,
+                createdAt: now,
+                post: { id: postId },
+              }
+            : undefined,
         });
         if (result.error) {
           return { form: result.error.message ?? "Failed to add comment.", fields: {} };

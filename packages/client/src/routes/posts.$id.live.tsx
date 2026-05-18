@@ -36,7 +36,7 @@ function LivePostDetailPage() {
         <div className="flex items-center gap-3">
           <LikeButton likeCount={post.likeCount} postId={String(post.id)} />
           <span className="text-sm text-neutral-500">💬 {post.commentCount}</span>
-          <DeletePostButton postId={String(post.id)} />
+          <DeletePostButton authorId={String(post.author.id)} postId={String(post.id)} />
         </div>
       </header>
 

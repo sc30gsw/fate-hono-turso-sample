@@ -17,7 +17,12 @@ export const addComment = {
   type: "Comment",
   resolve: async ({ ctx, input }: { ctx: FateContext; input: AddCommentInput }) => {
     const authorId = requireUserId(ctx);
+    const author = ctx.sessionUser;
     const id = crypto.randomUUID();
+
+    if (!author) {
+      throw new Error("Sign-in required.");
+    }
 
     await db.insert(comment).values({
       id,
@@ -31,7 +36,17 @@ export const addComment = {
     liveEventBus.update("Post", input.postId, { changed: ["comments", "commentCount"] });
     liveEventBus.connection("Post.comments", { id: input.postId }).appendNode("Comment", id);
 
-    return { id };
+    return {
+      id,
+      author: {
+        id: author.id,
+        image: author.image,
+        name: author.name,
+      },
+      content: input.content,
+      createdAt: new Date(),
+      post: { id: input.postId },
+    };
   },
 } as const;
 

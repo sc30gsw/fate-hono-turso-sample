@@ -14,7 +14,15 @@ export type { User } from "./features/auth/views";
 export type { Comment } from "./features/comments/views";
 export type { Post } from "./features/posts/views";
 
-export type FateContext = { sessionUser: Pick<UserRow, "id"> | undefined };
+export type FateContext = {
+  sessionUser:
+    | {
+        id: UserRow["id"];
+        image?: UserRow["image"] | undefined;
+        name: UserRow["name"];
+      }
+    | undefined;
+};
 
 const sources = createDrizzleSourceAdapter<FateContext>({
   db,
@@ -43,7 +51,15 @@ function readAdapterHeaders(adapterContext: unknown) {
 export const fate = createFateServer<FateContext>({
   context: async ({ adapterContext }) => {
     const session = await auth.api.getSession({ headers: readAdapterHeaders(adapterContext) });
-    return { sessionUser: session?.user ?? undefined };
+    return {
+      sessionUser: session?.user
+        ? {
+            id: session.user.id,
+            image: session.user.image,
+            name: session.user.name,
+          }
+        : undefined,
+    };
   },
   live: liveEventBus,
   mutations,

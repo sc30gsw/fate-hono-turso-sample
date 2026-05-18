@@ -20,7 +20,6 @@ export function LikeButton({ postId, likeCount }: LikeButtonProps) {
       onClick={() =>
         void like({
           input: { postId },
-          optimistic: { likeCount: likeCount + 1 },
         })
       }
       type="button"

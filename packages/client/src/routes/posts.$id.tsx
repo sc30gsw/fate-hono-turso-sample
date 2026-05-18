@@ -44,7 +44,7 @@ function PostDetailPage() {
           >
             View live →
           </Link>
-          <DeletePostButton postId={String(post.id)} />
+          <DeletePostButton authorId={String(post.author.id)} postId={String(post.id)} />
         </div>
       </header>
 

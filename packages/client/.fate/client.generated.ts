@@ -70,6 +70,7 @@ export const createFateClient = (options: {
         {
           fields: {
             author: { type: 'User' },
+            post: { type: 'Post' },
           },
           type: 'Comment',
         },
