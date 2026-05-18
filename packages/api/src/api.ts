@@ -1,25 +1,19 @@
 import { parseNumber } from "@app/shared/parse";
+import { createHonoFateHandler } from "@nkzw/fate/server";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 
-import { authRoutes } from "./modules/auth/auth";
-import { health } from "./modules/health/health";
+import { authRoutes } from "~/modules/auth/auth";
+import { fate } from "~/modules/fate/fate";
 
 const allowedOrigins = (process.env.CLIENT_ORIGIN ?? "http://localhost:5173").split(",");
 
-const app = new Hono()
-  .use(
-    "*",
-    cors({
-      credentials: true,
-      origin: allowedOrigins,
-    }),
-  )
-  .basePath("/api")
-  .route("/auth", authRoutes)
-  .route("/health", health);
+const fateHandler = createHonoFateHandler(fate);
 
-export type AppType = typeof app;
+const app = new Hono()
+  .use("*", cors({ credentials: true, origin: allowedOrigins }))
+  .route("/api/auth", authRoutes)
+  .all("/fate/*", (c) => fateHandler(c));
 
 export default {
   fetch: app.fetch,
